@@ -61,18 +61,18 @@ async def activate_email_step2(user: NotificationRequest, db: asyncpg.Connection
         logger.error(f"Unexpected error in activate_email_step2: {e}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="An unexpected error occurred.")
 
-@router.put("/activate-email-step3")
-async def activate_email_step3(user: Generatecode, db: asyncpg.Connection = Depends(get_db)):
+@router.get("/activate-email-step3/{email}")
+async def activate_email_step3(email:str , db: asyncpg.Connection = Depends(get_db)):
     """
     Endpoint pour activer l'email.
     """
     try:
-        db_user = await get_user_by_email(db, email=user.email)
+        db_user = await get_user_by_email(db, email=email)
         if not db_user:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invalid email.")
         
-        logger.info(f"Activating email: {user.email}")
-        return await activate_user_email(db, user.email)
+        logger.info(f"Activating email: {email}")
+        return await activate_user_email(db, email)
     
     except ValueError as e:
         logger.error(f"ValueError in activate_email_step3: {e}")

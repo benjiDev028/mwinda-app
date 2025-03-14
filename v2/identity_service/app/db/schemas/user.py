@@ -35,7 +35,7 @@ class UserUpdate(BaseModel) :
 class User(BaseModel):
     first_name: str
     last_name: str
-    email: EmailStr
+    email: str
     date_birth: str
 
 class UserResponseFind(UserBase):
@@ -45,11 +45,13 @@ class UserResponseFind(UserBase):
     email: EmailStr
     date_birth: str
     is_email_verified: bool 
+    role: str
     pointevents: int 
     pointstudios: int 
     
 
 class UserCreate(UserBase):
+
     password: str
 class UserFindById(BaseModel):
     id: UUID

@@ -53,8 +53,8 @@ class User(Base):
     pointevents = Column(Integer, default=0)
     barcode_seq = Sequence("barcode_seq", start=120000001)  # Sequence for auto-increment
     barcode = Column(Integer, nullable=True, server_default=barcode_seq.next_value())
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now)
 
 
 # Supprimer et recréer uniquement la table "users" si elle existe

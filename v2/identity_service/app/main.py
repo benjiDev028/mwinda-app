@@ -13,7 +13,7 @@ from sqlalchemy.exc import OperationalError
 
 app = FastAPI()
 
-DATABASE_URL = "postgresql://mwinda:mwinda@postgres:5432/mwindaIdentity"
+DATABASE_URL = "postgresql://mwinda:mwinda@localhost:5432/mwindaIdentity"
 
 # Attendre que PostgreSQL soit prêt avant de se connecter
 RETRY_COUNT = 10  # Nombre max de tentatives

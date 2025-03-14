@@ -23,6 +23,9 @@ import logging
 # Configuration du logger
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
+RABBITMQ_URL = "amqp://guest:guest@localhost:5672"# Configurez l'URL de RabbitMQ
+QUEUE_NAME = "activate_compte_queue"# Nom de la file d'attente RabbitMQ
+
 async def register_user(db: asyncpg.Connection, user: UserCreate) -> UserResponse:
     try:
         existing_user = await db.fetchrow("SELECT id FROM users WHERE email = $1", user.email)
@@ -64,6 +67,21 @@ async def register_user(db: asyncpg.Connection, user: UserCreate) -> UserRespons
             )
         
         logging.info("User registered successfully: %s", new_user['email'])
+        connection = await aio_pika.connect_robust(RABBITMQ_URL)
+        async with connection:
+            # Création d'un canal
+            channel = await connection.channel()
+
+            # Déclarer la queue
+            await channel.declare_queue(QUEUE_NAME, durable=True)
+
+            # Publier le message
+            message = aio_pika.Message(
+                body=json.dumps({"first_name": user.first_name, "last_name": user.last_name,"email":user.email}).encode(),
+                content_type="application/json",
+                delivery_mode=aio_pika.DeliveryMode.PERSISTENT,
+            )
+            await channel.default_exchange.publish(message, routing_key=QUEUE_NAME)
         return UserResponse(**dict(new_user))
 
     except HTTPException as http_error:
@@ -111,6 +129,9 @@ async def update_user(db: asyncpg.Connection, user_id: uuid, user: UserUpdate) -
         logging.error(f"Erreur lors de la mise à jour de l'utilisateur avec l'ID {user_id}: {e}")
         raise HTTPException(status_code=500, detail="Erreur serveur.")
 
+
+
+
 async def activate_user_email(db: asyncpg.Connection, email: str):
     try:
         query = "UPDATE users SET is_email_verified = TRUE WHERE email = $1"
@@ -123,7 +144,7 @@ async def activate_user_email(db: asyncpg.Connection, email: str):
 
 async def get_user(db: asyncpg.Connection, user_id: uuid):
     try:
-        query = "SELECT id, first_name, last_name, email, date_birth, role, is_email_verified, pointevents,pointstudios FROM users WHERE id = $1"
+        query = "SELECT id, first_name, last_name, email, date_birth, role, is_email_verified, barcode,created_at,pointevents,pointstudios FROM users WHERE id = $1"
         user = await db.fetchrow(query, user_id)
         if not user:
             logging.warning("Utilisateur non trouvé avec l'ID : %s", user_id)
@@ -153,6 +174,24 @@ async def get_user_by_email(db: asyncpg.Connection, email: str):
         logging.error("Error fetching user by email: %s", str(e))
         raise RuntimeError(f"Error fetching user: {e}")
 
+
+async def delete_user_by_id(db: asyncpg.Connection, user_id: uuid):
+    try:
+         # Acquisition sécurisée de la connexion
+        user_exists = await db.fetchval("SELECT COUNT(*) FROM users WHERE id = $1", user_id)
+            
+        if not user_exists:
+            logging.warning("Utilisateur non trouvé avec l'ID : %s", user_id)
+            return False
+
+        await db.execute("DELETE FROM users WHERE id = $1", user_id)
+        logging.info("Utilisateur supprimé avec succès avec l'ID : %s", user_id)     
+        return True
+    except Exception as e:
+        logging.error("Erreur lors de la suppression de l'utilisateur par ID : %s", str(e))
+        raise RuntimeError(f"Erreur lors de la suppression de l'utilisateur : {e}")
+    
+    
 async def get_users_by_birthday(db: asyncpg.Connection, date_birth: str) -> List[UserResponse]:
     try:
         query = """
@@ -182,6 +221,7 @@ async def get_users(db: asyncpg.Connection) -> List:
         query = """
         SELECT id, first_name, last_name, email, date_birth, is_email_verified,role, pointevents,pointstudios,barcode
         FROM users
+        ORDER BY first_name ASC
         """
         users = await db.fetch(query)
         
@@ -204,7 +244,7 @@ async def get_users(db: asyncpg.Connection) -> List:
 async def get_by_username(db: asyncpg.Connection, first_name: str, last_name: str) -> List[UserResponse]:
     try:
         query = """
-        SELECT id, first_name, last_name, email, date_birth, is_email_verified, pointevents,pointstudios
+        SELECT id, first_name, last_name, email, date_birth,role, is_email_verified, pointevents,pointstudios
         FROM users
         WHERE first_name ILIKE '%' || $1 || '%' OR last_name ILIKE '%' || $2 || '%'
         """

@@ -4,7 +4,7 @@ from sqlalchemy.exc import OperationalError
 from app.db.base import Base
 from app.db.session import engine
 
-DATABASE_URL = "postgresql://mwinda:mwinda@postgres:5432/mwindaIdentity"
+DATABASE_URL = "postgresql://mwinda:mwinda@localhost:5432/mwindaidentity"
 
 # Attendre que PostgreSQL soit prêt avant de se connecter
 RETRY_COUNT = 10  # Nombre max de tentatives

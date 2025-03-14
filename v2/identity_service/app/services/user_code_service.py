@@ -49,14 +49,18 @@ async def delete_user_code(db: asyncpg.Connection, email: str):
         logging.error(f"Erreur lors de la suppression du code pour {email}: {e}")
         raise HTTPException(status_code=500, detail="Erreur interne lors de la suppression du code.")
 
-RABBITMQ_URL = "amqp://guest:guest@rabbitmq:5672/"# Configurez l'URL de RabbitMQ
+
+
+#rabbit mq configuration
+
+RABBITMQ_URL = "amqp://guest:guest@localhost:5672"# Configurez l'URL de RabbitMQ
 QUEUE_NAME = "reset_password_queue"  # Nom de la file RabbitMQ
 
 async def send_reset_code_to_user(db: asyncpg.Connection, email: str):
     """
     Envoie le code à l'utilisateur via mail et sauvegarde
     """
-    reset_code = str(random.randint(10000, 99999))
+    reset_code =str(random.randint(10000, 99999))
 
     try:
         connection = await aio_pika.connect_robust(RABBITMQ_URL)
@@ -88,7 +92,7 @@ async def send_reset_code_to_user(db: asyncpg.Connection, email: str):
             ON CONFLICT (email) DO UPDATE 
             SET code = EXCLUDED.code, created_at = CURRENT_TIMESTAMP
         """
-        await db.execute(query, email, reset_code)
+        await db.execute(query, email, int(reset_code))
         logging.info(f"Code {reset_code} sauvegardé pour {email}")
     except Exception as e:
         logging.error(f"Erreur lors de la sauvegarde du code pour {email}: {e}")

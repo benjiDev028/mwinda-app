@@ -71,6 +71,7 @@ async def reset_password_endpoint(
         logger.error(f"Erreur lors de l'envoi du code de réinitialisation pour {user.email}: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
+
 @router.put("/reset-password-step2")
 async def reset_password_endpoint(
     user: CodeResetPasswordRequest, db: asyncpg.Connection = Depends(get_db)

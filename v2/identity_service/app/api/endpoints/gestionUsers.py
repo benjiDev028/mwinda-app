@@ -5,7 +5,7 @@ from uuid import UUID
 from fastapi.encoders import jsonable_encoder
 from app.db.session import connect_to_db, close_db_connection
 from app.db.schemas.user import UserFindByBirth, UserFindByName, UserFindByEmail, UserFindById,UserUpdate
-from app.services.user_service import get_users, get_by_username, get_user_by_email, get_user, get_users_by_birthday,update_user
+from app.services.user_service import get_users, get_by_username, get_user_by_email, get_user, get_users_by_birthday,update_user,delete_user_by_id
 import asyncpg
 import logging
 
@@ -109,6 +109,19 @@ async def get_user_by_id(user_id: UUID, db: asyncpg.Connection = Depends(get_db)
     except Exception as e:
         logging.error(f"Erreur inattendue dans get_user_by_id : {e}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Une erreur inattendue est survenue.")
+
+
+
+@router.delete("/delete_user_by_id/{user_id}")
+async def delete_by_id(user_id: UUID, db: asyncpg.Connection = Depends(get_db)):
+    try:
+        success = await delete_user_by_id(db, user_id)
+        if not success:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Utilisateur non trouvé")
+        return {"message": "Utilisateur supprimé avec succès"}
+    except RuntimeError as e:
+        logging.error(f"Erreur inattendue dans delete_user_by_id : {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Une erreur inattendue s'est produite.")
 
 @router.put("/update_user_by_id/{user_id}")
 async def update_user_by_id(user_id: UUID, user: UserUpdate, db: asyncpg.Connection = Depends(get_db)):
