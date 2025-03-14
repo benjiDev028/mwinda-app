@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from app.db.models import LoyaltyHistory
 from app.db.schemas import LoyaltyHistoryCreate
+from sqlalchemy import desc
 import uuid
 
 def create_loyalty_history(db: Session, loyalty_data: LoyaltyHistoryCreate):
@@ -21,11 +22,14 @@ def create_loyalty_history(db: Session, loyalty_data: LoyaltyHistoryCreate):
 def get_loyalty_history(db: Session, loyalty_id: uuid.UUID):
     return db.query(LoyaltyHistory).filter_by(id=loyalty_id).first()
 
+def get_all_loyalty_history(db: Session):
+    return db.query(LoyaltyHistory).order_by(desc(LoyaltyHistory.date_points)).all()
+
 def get_user_loyalty_history(db: Session, user_id: uuid.UUID):
-    return db.query(LoyaltyHistory).filter_by(user_id=user_id).all()
+    return db.query(LoyaltyHistory).filter_by(user_id=user_id).order_by(desc(LoyaltyHistory.date_points)).all()
 
 def get_admin_loyalty_history(db: Session, id_admin: uuid.UUID):
-    return db.query(LoyaltyHistory).filter_by(id_admin=id_admin).all()
+    return db.query(LoyaltyHistory).filter_by(id_admin=id_admin).order_by(desc(LoyaltyHistory.date_points)).all()
 
 def update_loyalty_history(db: Session, loyalty_id: uuid.UUID, loyalty_data: LoyaltyHistoryCreate):
     history = db.query(LoyaltyHistory).filter_by(id=loyalty_id).first()

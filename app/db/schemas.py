@@ -17,5 +17,8 @@ class LoyaltyHistoryResponse(LoyaltyHistoryBase):
     id: uuid.UUID
     date_points: datetime
 
+class LoyaltyAllHistoryResponse(LoyaltyHistoryBase): 
+    pass
+
     class Config:
         orm_mode = True

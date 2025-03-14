@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.db.database import get_db
-from app.services.history_service import create_loyalty_history, get_loyalty_history, delete_loyalty_history , update_loyalty_history , get_user_loyalty_history , get_admin_loyalty_history
-from app.db.schemas import LoyaltyHistoryCreate, LoyaltyHistoryResponse
+from app.services.history_service import create_loyalty_history, get_loyalty_history, delete_loyalty_history , update_loyalty_history , get_user_loyalty_history , get_admin_loyalty_history, get_all_loyalty_history
+from app.db.schemas import LoyaltyHistoryCreate, LoyaltyHistoryResponse, LoyaltyAllHistoryResponse
 import uuid
 import logging
-
+from typing import List
 
 logger = logging.getLogger("loyalty_history")
 router = APIRouter(prefix="/history", tags=["Service History"])
@@ -23,7 +23,7 @@ async def create_history(loyalty_data: LoyaltyHistoryCreate, db: Session = Depen
         logger.error("Erreur lors de la création de l'historique: %s", str(e))
         raise HTTPException(status_code=500, detail="Erreur interne du serveur")
 
-@router.get("/{loyalty_id}", response_model=LoyaltyHistoryResponse)
+@router.get("hist/{loyalty_id}", response_model=LoyaltyHistoryResponse)
 async def get_history(loyalty_id: uuid.UUID, db: Session = Depends(get_db)):
     """
     Recuperer les Infos d'un historique via l'id
@@ -34,7 +34,19 @@ async def get_history(loyalty_id: uuid.UUID, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Historique non trouvé")
     return history
 
-@router.get("/user/{user_id}", response_model=list[LoyaltyHistoryResponse])
+@router.get("/all_histories", response_model=List[LoyaltyHistoryResponse])    
+async def get_all_histories(db: Session = Depends(get_db)):
+    """
+    Recuperer tous les historiques
+    """
+    histories =  get_all_loyalty_history(db)
+    if not histories:
+        logger.warning("Aucun historique trouvé")
+        raise HTTPException(status_code=404, detail="Aucun historique trouvé")
+    
+    return histories
+
+@router.get("/user/{user_id}", response_model=List[LoyaltyHistoryResponse])
 async def get_user_history(user_id: uuid.UUID, db: Session = Depends(get_db)):
 
     """
@@ -49,7 +61,7 @@ async def get_user_history(user_id: uuid.UUID, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail="Erreur interne du serveur")
     
 
-@router.get("/admin/{id_admin}", response_model=list[LoyaltyHistoryResponse])
+@router.get("/admin/{id_admin}", response_model=List[LoyaltyHistoryResponse])
 async def get_user_history(id_admin: uuid.UUID, db: Session = Depends(get_db)):
 
     """
