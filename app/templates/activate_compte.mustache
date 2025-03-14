@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <title>Activation de compte - Mwinda Technologies</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f6f9fc;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            background-color: #001F3F;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .logo {
+            background-color: #ffffff;
+            border-radius: 15px;
+            padding: 20px;
+            display: inline-block;
+        }
+
+        .logo-title {
+            color: #001F3F;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .logo-subtitle {
+            font-size: 16px;
+        }
+
+        .content {
+            padding: 40px 30px;
+            text-align: center;
+        }
+
+        .content h1 {
+            color: #001F3F;
+            font-size: 28px;
+            margin-bottom: 20px;
+        }
+
+        .content p {
+            color: #4a5568;
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        .activation-link {
+            display: inline-block;
+            background: linear-gradient(135deg, #001F3F 0%, #0056b3 100%);
+            color: #ffffff;
+            padding: 15px 35px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 16px;
+            text-decoration: none;
+            box-shadow: 0 4px 6px rgba(0, 31, 63, 0.2);
+        }
+
+        .info-box {
+            margin: 30px 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .warning-box {
+            margin: 40px 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-left: 4px solid #001F3F;
+            border-radius: 8px;
+            text-align: left;
+        }
+
+        .footer {
+            background-color: #f8f9fa;
+            padding: 30px;
+            text-align: center;
+            border-top: 1px solid #eee;
+        }
+
+        .footer-title {
+            color: #001F3F;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .footer-text {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- En-tête avec logo -->
+        <div class="header">
+            <div class="logo">
+                <div class="logo-title">
+                    MWINDA
+                    <div class="logo-subtitle">TECHNOLOGIES</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contenu principal -->
+        <div class="content">
+            <h1>Activation de votre compte</h1>
+            <p>Bonjour,<br><br>Pour activer votre compte chez Mwinda Technologies, cliquez sur le lien ci-dessous :</p>
+
+            <!-- Lien d'activation -->
+            <a href="http://192.168.2.13:8001/identity/activate-email-step3/{{email}}" class="activation-link">Activer mon compte</a>
+
+            <!-- Identifiant -->
+            <div class="info-box">
+                <p>Email associé : <strong style="color: #001F3F;">{{email}}</strong></p>
+            </div>
+
+            <!-- Avertissement -->
+            <div class="warning-box">
+                <p>
+                    <strong style="color: #001F3F;">Important :</strong><br>
+                    • Ce lien d'activation est valable pendant 24 heures<br>
+                    • Si vous n'avez pas créé de compte, veuillez ignorer cet email
+                </p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <div class="footer-title">Mwinda Technologies</div>
+            <div class="footer-text">Illuminer l'avenir par l'innovation</div>
+        </div>
+    </div>
+</body>
+</html>
