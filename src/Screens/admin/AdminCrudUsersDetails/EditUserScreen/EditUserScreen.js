@@ -1,53 +1,63 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, ActivityIndicator } from 'react-native';
-import {UserService} from '../../../../Services/UserServices/UserService';
+import React, { useState, useEffect,useContext } from 'react';
+import { View, StyleSheet } from 'react-native';
+import { TextInput, Button, ActivityIndicator, Text, Snackbar } from 'react-native-paper';
+import UserService from '../../../../Services/UserServices/UserService';
+import { AuthContext } from '../../../../context/AuthContext';
 
 const EditUserScreen = ({ route, navigation }) => {
-  const { userId } = route.params; // Récupérer l'ID de l'utilisateur depuis la navigation
-  const [user, setUser] = useState(null);
+    const { authToken } = useContext(AuthContext);
+    const { id } = route.params;
+    
+    
+  
+  const { id_edit } = route.params; // Récupérer l'ID de l'utilisateur
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
     email: '',
-    role: '',
+    date_birth:''
   });
-
+  const [originalData, setOriginalData] = useState({});
+  console.log("dans edit :",id)
   useEffect(() => {
     const fetchUserDetails = async () => {
       try {
-        const userData = await UserService.GetUserById(userId);
-        setUser(userData);
+        const userData = await UserService.GetUserById(id);
         setFormData({
-          first_name: userData.first_name,
-          last_name: userData.last_name,
-          email: userData.email,
-          role: userData.role,
+          first_name: userData.first_name || '',
+          last_name: userData.last_name || '',
+          email: userData.email || '',
+          date_birth: userData.date_birth || ''
         });
+        setOriginalData(userData);
       } catch (error) {
-        console.error('Erreur lors de la récupération des détails de l\'utilisateur:', error);
+        setError("Erreur lors de la récupération des données.");
+        console.error(error);
       } finally {
         setLoading(false);
       }
     };
 
     fetchUserDetails();
-  }, [userId]);
+  }, [id]);
 
   const handleSave = async () => {
     try {
-      await UserService.UpdateUser(userId, formData); // Supposons que vous avez une méthode pour mettre à jour un utilisateur
-      navigation.goBack(); // Revenir à la page précédente après la mise à jour
+      await UserService.updateUser(id,formData,authToken)
+      navigation.goBack(); // Revenir à la page précédente
     } catch (error) {
-      console.error('Erreur lors de la mise à jour de l\'utilisateur:', error);
+      setError("Erreur lors de la mise à jour.");
+      console.error(error);
     }
   };
 
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#2196F3" />
-        <Text style={styles.loadingText}>Chargement des détails de l'utilisateur...</Text>
+        <ActivityIndicator animating={true} size="large" color="#fec107" />
+        <Text style={styles.loadingText}>Chargement...</Text>
       </View>
     );
   }
@@ -55,31 +65,63 @@ const EditUserScreen = ({ route, navigation }) => {
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Modifier l'utilisateur</Text>
+
       <TextInput
-        style={styles.input}
-        placeholder="Prénom"
+        label="Prénom"
+        mode="outlined"
         value={formData.first_name}
         onChangeText={(text) => setFormData({ ...formData, first_name: text })}
+        style={styles.input}
       />
       <TextInput
-        style={styles.input}
-        placeholder="Nom"
+        label="Nom"
+        mode="outlined"
         value={formData.last_name}
         onChangeText={(text) => setFormData({ ...formData, last_name: text })}
+        style={styles.input}
       />
       <TextInput
-        style={styles.input}
-        placeholder="Email"
+        label="Email"
+        mode="outlined"
         value={formData.email}
         onChangeText={(text) => setFormData({ ...formData, email: text })}
+        keyboardType="email-address"
+        disabled
+        style={styles.input}
       />
       <TextInput
+        label="Date of birth"
+        mode="outlined"
+        value={formData.date_birth}
+        onChangeText={(text) => setFormData({ ...formData, date_birth: text })}
         style={styles.input}
-        placeholder="Rôle"
+      />
+     
+      <TextInput
+        label="Rôle"
+        mode="outlined"
         value={formData.role}
         onChangeText={(text) => setFormData({ ...formData, role: text })}
+        style={styles.input}
       />
-      <Button title="Enregistrer" onPress={handleSave} />
+
+      <Button
+        mode="contained"
+        onPress={handleSave}
+        style={styles.button}
+        disabled={JSON.stringify(formData) === JSON.stringify(originalData)} // Désactiver si rien n'a changé
+      >
+        Enregistrer
+      </Button>
+
+      {/* Affichage des erreurs */}
+      <Snackbar
+        visible={!!error}
+        onDismiss={() => setError('')}
+        action={{ label: 'OK', onPress: () => setError('') }}
+      >
+        {error}
+      </Snackbar>
     </View>
   );
 };
@@ -88,20 +130,22 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: '#fff',
+    backgroundColor: '#f9f9f9',
   },
   header: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: 'bold',
     marginBottom: 20,
+    color: '#fec107',
+    textAlign: 'center',
   },
   input: {
-    height: 40,
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 5,
     marginBottom: 15,
-    paddingHorizontal: 10,
+  },
+  button: {
+    marginTop: 10,
+    backgroundColor :'#fec107'
+    
   },
   loadingContainer: {
     flex: 1,
@@ -111,7 +155,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 10,
     fontSize: 16,
-    color: '#2196F3',
+    color: '#fec107',
   },
 });
 

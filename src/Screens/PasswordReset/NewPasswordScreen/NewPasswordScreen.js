@@ -12,6 +12,8 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
+import { useTranslation } from 'react-i18next';
+
 import splash from '../../../../assets/splash.png';
 import { Snackbar, Provider as PaperProvider } from 'react-native-paper'; // Importer Snackbar
 
@@ -31,6 +33,8 @@ export default function NewPasswordScreen() {
   const [snackbarVisible, setSnackbarVisible] = useState(false); // État pour gérer la visibilité du Snackbar
   const [snackbarMessage, setSnackbarMessage] = useState(""); // Message du Snackbar
   const [snackbarType, setSnackbarType] = useState("default"); 
+
+  const {t} = useTranslation();
 
   // Animation d'apparition du formulaire
   React.useEffect(() => {
@@ -109,8 +113,8 @@ export default function NewPasswordScreen() {
 
       <Animated.View style={[styles.container2, { opacity: fadeAnim }]}>
         <View style={styles.formContainer}>
-          <Text style={styles.title}>Nouveau mot de passe</Text>
-          <Text style={styles.subtitle}>Veuillez entrer votre nouveau mot de passe.</Text>
+          <Text style={styles.title}>{t('new password')}</Text>
+          <Text style={styles.subtitle}>{t('enter new mdp')}</Text>
 
           <TextInput
             style={styles.input}
@@ -130,7 +134,7 @@ export default function NewPasswordScreen() {
               {isLoading ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <Text style={styles.activeText}>Valider</Text>
+                <Text style={styles.activeText}>{t('valide btn')}</Text>
               )}
             </TouchableOpacity>
           </Animated.View>

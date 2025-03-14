@@ -68,6 +68,7 @@ export default function LoginScreen() {
     if(email ==='' || password==='') {
       
       showSnackbar("Veuillez remplir tous les champs", "warning");
+      Alert.alert("Avertissement", "Veuillez remplir tous les champs");
       return;
     }
     setIsLoading(true);
@@ -82,6 +83,7 @@ export default function LoginScreen() {
       }
     } catch (error) {
       showSnackbar("Email ou mot de passe incorrect", "error");
+      Alert.alert("Erreur", "Email ou mot de passe incorrect");
       setPassword('');
     }finally{
       setIsLoading(false);

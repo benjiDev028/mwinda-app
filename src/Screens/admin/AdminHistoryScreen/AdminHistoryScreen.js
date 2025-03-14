@@ -1,114 +1,125 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { 
   View, 
   Text, 
   StyleSheet, 
   FlatList, 
   Animated, 
-  TouchableOpacity 
+  TouchableOpacity,
+  ActivityIndicator ,RefreshControl
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-
-const HISTORY_DATA = [
-  {
-    id: '1',
-    action: 'User Creation',
-    user: 'John Doe',
-    date: '2024-03-15 14:30',
-    status: 'success'
-  },
-  {
-    id: '2',
-    action: 'Data Update',
-    user: 'Jane Smith',
-    date: '2024-03-14 09:15',
-    status: 'pending'
-  },
-  {
-    id: '3',
-    action: 'Account Deletion',
-    user: 'Mike Johnson',
-    date: '2024-03-13 16:45',
-    status: 'error'
-  },
-];
+import HistoryService from '../../../Services/HistoryServices/HistoryService';
 
 const COLORS = {
   success: '#4CAF50',
-  pending: '#FFC107',
-  error: '#F44336',
   background: '#F8F9FA',
   primary: '#2C3E50',
+  textSecondary: '#6C757D',
 };
 
 export default function AdminHistoryScreen() {
+  const [historyData, setHistoryData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing,setRefreshing]=useState(false);
+
+
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
 
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 800,
-        useNativeDriver: true
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 500,
-        useNativeDriver: true
-      })
-    ]).start();
+  useEffect(() =>  {
+    const loadData = async () => {
+      try {
+        const data = await HistoryService.getHistoryWithNames();
+        setHistoryData(data);
+        
+        Animated.parallel([
+          Animated.timing(fadeAnim, {
+            toValue: 1,
+            duration: 800,
+            useNativeDriver: true
+          }),
+          Animated.timing(slideAnim, {
+            toValue: 0,
+            duration: 500,
+            useNativeDriver: true
+          })
+        ]).start();
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadData();
   }, []);
 
-  const renderItem = ({ item, index }) => {
-    const statusColor = COLORS[item.status];
-    const iconName = {
-      success: 'check-circle',
-      pending: 'clock',
-      error: 'alert-circle'
-    }[item.status];
-
-    return (
-      <Animated.View 
-        style={[
-          styles.itemContainer,
-          {
-            opacity: fadeAnim,
-            transform: [{
-              translateY: fadeAnim.interpolate({
-                inputRange: [0, 1],
-                outputRange: [50 * (index + 1), 0]
-              })
-            }]
-          }
-        ]}
-      >
-        <View style={styles.itemHeader}>
-          <MaterialCommunityIcons 
-            name={iconName} 
-            size={24} 
-            color={statusColor} 
-          />
-          <Text style={styles.actionText}>{item.action}</Text>
-          <View style={[styles.statusBadge, { backgroundColor: statusColor + '20' }]}>
-            <Text style={[styles.statusText, { color: statusColor }]}>
-              {item.status.toUpperCase()}
-            </Text>
-          </View>
-        </View>
-        
-        <View style={styles.itemBody}>
-          <MaterialCommunityIcons name="account" size={16} color="#6C757D" />
-          <Text style={styles.userText}>{item.user}</Text>
-        </View>
-        
-        <View style={styles.itemFooter}>
-          <MaterialCommunityIcons name="clock" size={16} color="#6C757D" />
-          <Text style={styles.dateText}>{item.date}</Text>
-        </View>
-      </Animated.View>
-    );
+  const formatDate = (isoString) => {
+    const date = new Date(isoString);
+    return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
   };
+
+  const onRefresh= async ()=>{
+    setRefreshing(true)
+    const data = await HistoryService.getHistoryWithNames();
+    setHistoryData(data);
+    setRefreshing(false);
+
+  }
+
+
+  const renderItem = ({ item, index }) => (
+    <Animated.View 
+      style={[
+        styles.itemContainer,
+        {
+          opacity: fadeAnim,
+          transform: [{
+            translateY: fadeAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: [50 * (index + 1), 0]
+            })
+          }]
+        }
+      ]}
+    >
+      <View style={styles.itemHeader}>
+        <MaterialCommunityIcons 
+          name={item.reference.includes('Studio') ? 'music-circle' : 'calendar'} 
+          size={24} 
+          color="#2196F3" 
+        />
+        <Text style={styles.actionText}>
+          {item.reference.trim()}  ({item.points} points)
+        </Text>
+      </View>
+
+      <View style={styles.detailRow}>
+        <MaterialCommunityIcons name="cash" size={16} color={COLORS.textSecondary} />
+        <Text style={styles.detailText}>{item.amount} $</Text>
+        
+        <MaterialCommunityIcons name="account" size={16} color={COLORS.textSecondary} />
+        <Text style={styles.detailText}>{item.user_name}</Text>
+      </View>
+
+      <View style={styles.detailRow}>
+        <MaterialCommunityIcons name="account-tie" size={16} color={COLORS.textSecondary} />
+        <Text style={styles.detailText}>{item.admin_name}</Text>
+        
+        <MaterialCommunityIcons name="clock" size={16} color={COLORS.textSecondary} />
+        <Text style={styles.detailText}>{formatDate(item.date_points)}</Text>
+      </View>
+    </Animated.View>
+  );
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#2196F3" />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -121,18 +132,26 @@ export default function AdminHistoryScreen() {
           }
         ]}
       >
-        <Text style={styles.title}>Activity History</Text>
-        <TouchableOpacity style={styles.filterButton}>
-          <MaterialCommunityIcons name="filter" size={24} color={COLORS.primary} />
-        </TouchableOpacity>
+        <Text style={styles.title}>Historique des Transactions</Text>
       </Animated.View>
 
       <FlatList
-        data={HISTORY_DATA}
+        data={historyData}
         renderItem={renderItem}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
+        ListEmptyComponent={
+          <Text style={styles.emptyText}>Aucun historique disponible</Text>
+        }
+        
+        refreshControl={
+                    <RefreshControl
+                    refreshing={refreshing}
+                    onRefresh={onRefresh}
+                    colors={['#2196F3']}
+                    tintColors={['#FEC107']}
+                    />
+                  }
       />
     </View>
   );
@@ -145,22 +164,13 @@ const styles = StyleSheet.create({
     padding: 20
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     marginBottom: 20
   },
   title: {
     fontSize: 24,
     fontWeight: '700',
-    color: COLORS.primary
-  },
-  filterButton: {
-    padding: 8,
-    borderRadius: 8
-  },
-  listContent: {
-    paddingBottom: 20
+    color: COLORS.primary,
+    textAlign: 'center'
   },
   itemContainer: {
     backgroundColor: '#FFF',
@@ -184,33 +194,26 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     color: COLORS.primary
   },
-  statusBadge: {
-    marginLeft: 'auto',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4
-  },
-  statusText: {
-    fontSize: 12,
-    fontWeight: '700'
-  },
-  itemBody: {
+  detailRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 4
+    marginVertical: 4,
+    justifyContent: 'space-between'
   },
-  userText: {
-    marginLeft: 8,
-    color: '#6C757D'
+  detailText: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    marginLeft: 4,
+    marginRight: 12
   },
-  itemFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 4
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center'
   },
-  dateText: {
-    marginLeft: 8,
-    color: '#6C757D',
-    fontSize: 12
+  emptyText: {
+    textAlign: 'center',
+    color: COLORS.textSecondary,
+    marginTop: 20
   }
 });

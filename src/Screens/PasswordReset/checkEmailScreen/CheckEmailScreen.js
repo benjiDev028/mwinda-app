@@ -15,6 +15,7 @@ import ResetPasswordService from "../../../Services/PasswordServices/ResetPasswo
 import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import styles from "./Styles";
+import { useTranslation } from 'react-i18next';
 
 export default function CheckEmailScreen() {
   const [email, setEmail] = useState("");
@@ -25,6 +26,7 @@ export default function CheckEmailScreen() {
   const navigation = useNavigation();
   const fadeAnim = useState(new Animated.Value(0))[0];
   const slideAnim = useState(new Animated.Value(30))[0];
+  const {t} = useTranslation();
 
   // Animation au montage du composant
   useEffect(() => {
@@ -93,9 +95,9 @@ export default function CheckEmailScreen() {
 
         {/* Formulaire */}
         <Animated.View style={[styles.formContainer, { opacity: fadeAnim }]}>
-          <Text style={styles.title}>Réinitialisation de mot de passe</Text>
+          <Text style={styles.title}>{t('r mdp')}</Text>
           <Text style={styles.subtitle}>
-            Entrez votre adresse email pour recevoir le code de vérification
+            {t('entrer')}
           </Text>
 
           {/* Champ de saisie de l'email */}
@@ -118,7 +120,7 @@ export default function CheckEmailScreen() {
             {isLoading ? (
               <ActivityIndicator color="#FFFFFF" />
             ) : (
-              <Text style={styles.buttonText}>Envoyer le code</Text>
+              <Text style={styles.buttonText}>{t('send code btn')}</Text>
             )}
           </TouchableOpacity>
         </Animated.View>

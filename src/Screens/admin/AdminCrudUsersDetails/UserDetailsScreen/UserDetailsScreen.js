@@ -1,16 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect ,useContext} from 'react';
 import { View, Text, ActivityIndicator, StyleSheet, TouchableOpacity, Alert, Animated } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import UserService from '../../../../Services/UserServices/UserService';
+import LoyaltyService from '../../../../Services/LoyaltyServices/LoyaltyService';
+import { AuthContext } from '../../../../context/AuthContext';
 
 const UserDetailsScreen = ({ route, navigation }) => {
   const { id } = route.params;
+  const { id: id_admin} = useContext(AuthContext);
+
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const fadeAnim = useState(new Animated.Value(0))[0];
 
-  useEffect(() => {
+ 
     const fetchUserDetails = async () => {
       try {
         const userData = await UserService.GetUserById(id);
@@ -26,8 +30,47 @@ const UserDetailsScreen = ({ route, navigation }) => {
         setLoading(false);
       }
     };
+  
+
+  useEffect(() => {
     fetchUserDetails();
   }, [id]);
+
+const redeemPoints_event = async () => {
+  try {
+      await LoyaltyService.GotYourPoint(id,id_admin, "Event"); // Service peut être paramétré selon besoin
+      Alert.alert('Points réclamés avec succès','',[
+        {
+          text: 'Ok',
+          onPress: ()=>{
+          fetchUserDetails();
+          },
+        }
+      ]);
+    
+  } catch (error) {
+      Alert.alert('Erreur lors de la réclamation des points');
+  }
+};
+const redeemPoints_studio = async () => {
+  try {
+      await LoyaltyService.GotYourPoint(id,id_admin, "Studio"); // Service peut être paramétré selon besoin
+      Alert.alert('Points réclamés avec succès','',[
+        {
+          text: 'Ok',
+          onPress: ()=>{
+          fetchUserDetails();
+          },
+        }
+      ]);
+   
+    
+  } catch (error) {
+      Alert.alert('uuErreur lors de la réclamation des points');
+  }
+};
+
+
 
   if (loading) {
     return (
@@ -52,22 +95,25 @@ const UserDetailsScreen = ({ route, navigation }) => {
       <View style={styles.card}>
         <Text style={styles.label}>Nom: <Text style={styles.value}>{user.first_name} {user.last_name}</Text></Text>
         <Text style={styles.label}>Email: <Text style={styles.value}>{user.email}</Text></Text>
+        <Text style={styles.label}>Creation du compte: <Text style={styles.value}>{user.created_at}</Text></Text>
         {!user.is_email_verified && <Text style={styles.warningText}>Compte désactivé: Email non vérifié</Text>}
-        <Text style={styles.label}>Rôle: <Text style={styles.value}>{user.role}</Text></Text>
+        <Text style={styles.label}>Code : <Text style={styles.value}>{user.barcode}</Text></Text>
         <Text style={styles.label}>Points Événements: <Text style={styles.value}>{user.pointevents}</Text></Text>
         <Text style={styles.label}>Points Studios: <Text style={styles.value}>{user.pointstudios}</Text></Text>
       </View>
 
       <View style={styles.actionsContainer}>
         <TouchableOpacity 
-          style={[styles.rewardButton, { opacity: user.pointevents >= 100 ? 1 : 0.5 }]} 
-          disabled={user.pointevents < 100}>
+          style={[styles.rewardButton, { opacity: user.pointevents >= 40000 ? 1 : 0.5 }]} 
+          disabled={user.pointevents < 40000}
+          onPress={redeemPoints_event}>
           <Text style={styles.buttonText}>Donner Récompense (Événements)</Text>
         </TouchableOpacity>
 
         <TouchableOpacity 
-          style={[styles.rewardButton, { opacity: user.pointstudios >= 100 ? 1 : 0.5 }]} 
-          disabled={user.pointstudios < 100}>
+          style={[styles.rewardButton, { opacity: user.pointstudios >= 5000 ? 1 : 0.5 }]} 
+          disabled={user.pointstudios < 5000}
+          onPress={redeemPoints_studio}>
           <Text style={styles.buttonText}>Donner Récompense (Studios)</Text>
         </TouchableOpacity>
       </View>

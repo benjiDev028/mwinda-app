@@ -1,130 +1,153 @@
-import { StyleSheet } from "react-native";
+import { StyleSheet, Dimensions } from "react-native";
 
+// Get screen dimensions for responsive design
+const { width } = Dimensions.get('window');
 
 const styles = StyleSheet.create({
-
-
-    container: {
-        flex: 1,
-        width: '100%',
-        backgroundColor: '#fff',
+  container: {
+    flex: 1,
+    width: '100%',
+    backgroundColor: '#f9f9f9', // Subtle off-white background for better contrast
+  },
+  container1: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 280, // Reduced height for better proportions
+    borderBottomRightRadius: 40,
+    borderBottomLeftRadius: 40,
+    width: '100%',
+    backgroundColor: '#fec107',
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
     },
-    image: {
-        
-      
-       
-        width: '50%',
-        height: '50%',
-       
-       
-
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 6, // Add shadow for Android
+  },
+  containerImage: {
+    width: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 20,
+  },
+  image: {
+    width: width * 0.4, // Responsive width
+    height: width * 0.2, // Responsive height
+    resizeMode: 'contain', // Ensure the image fits properly
+  },
+  icon: {
+    height: 130,
+    marginTop: -65, // Position the profile picture to overlap with the yellow container
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 2, // Ensure the profile image appears on top
+  },
+  uploadButton: {
+    position: 'relative',
+    width: 130,
+    height: 130,
+    borderRadius: 65,
+    overflow: 'hidden',
+    borderWidth: 4,
+    borderColor: '#fff', // White border for contrast
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
     },
-    container1: {
-        justifyContent: 'center',
-        height: 350,
-        borderBottomRightRadius:50,
-        borderBottomLeftRadius: 50,
-        width: '100%',
-        backgroundColor: '#fec107',
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 5,
+  },
+  profileImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  editIcon: {
+    position: 'absolute',
+    bottom: 10,
+    right: 10,
+    backgroundColor: '#fec107', // Match with the header color
+    padding: 8,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  container2: {
+    flexGrow: 1,
+    paddingHorizontal: 25,
+    paddingBottom: 50,
+    paddingTop: 30,
+  },
+  form: {
+    marginTop: 20,
+    backgroundColor: '#fff',
+    borderRadius: 15,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
     },
-    containerImage:{
-        width: '100%',
-        Height: 50,
-        justifyContent: 'center',
-      
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  text: {
+    fontSize: 14,
+    marginBottom: 5,
+    fontWeight: '600',
+    color: '#555',
+    marginLeft: 5,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+    backgroundColor: '#f8f8f8',
+    fontSize: 15,
+  },
+  editButton: {
+    flexDirection: 'row',
+    backgroundColor: '#fec107',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 10,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
     },
-    
-        
-
-
-    icon: {
-        height: 150,
-        
-        justifyContent: 'center',
-        alignItems: 'center',
-      },
-      uploadButton: {
-        position: 'relative',
-        width: 120,
-        height: 120,
-        borderRadius: 60, // Cercle parfait
-        overflow: 'hidden',
-        borderWidth: 3,
-        borderColor: '#ddd',
-        justifyContent: 'center',
-        alignItems: 'center',
-      },
-      profileImage: {
-        width: '100%',
-        height: '100%',
-        resizeMode: 'cover', // Pour que l'image prenne toute la surface du cercle
-        backgroundColor: '#ddd', // Fond gris en attendant le chargement de l'image
-      },
-      container2: {
-        flexGrow: 1, // Permet à ScrollView d'être défilable
-        paddingHorizontal: 20, // Marges sur les côtés
-        paddingBottom: 50, // Ajoute un espace en bas
-      },
-      editIcon: {
-        position: 'absolute',
-        bottom: 15,
-        right: 10,
-        backgroundColor: 'rgba(0, 0, 0, 0.6)', // Fond sombre pour le crayon
-        padding: 5,
-        borderRadius: 20,
-      },
-      form: {
-        marginTop: 10, // Espace entre le logo et le formulaire
-      },
-      title: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        marginBottom: 20,
-        textAlign: 'center',
-      },
-      text: {
-        fontSize: 16,
-        marginBottom: 5,
-      },
-      input: {
-        borderWidth: 1,
-        borderColor: '#ccc',
-        borderRadius: 5,
-        padding: 10,
-        marginBottom: 20,
-      },
-      editButton:{
-             
-        fontSize:16,
-        
-        alignItems:'center'
-       
-
-      },
-      editButtonText:{
-        fontSize: 16,
-        textAlign:'center'
-      },
-      textdeconnection:{
-        fontSize: 20,
-        color: 'red',
-       textAlign:'center'
-
-        
-      },
-      logoutButton: {
-        position: 'absolute', // Positionner le bouton en absolu
-        top: 58, // Ajuste la position du bouton
-        right: 30, // Positionner à droite
-        padding: 10, // Ajouter un peu de padding pour la taille du bouton
-        backgroundColor: '#fec', // Fond semi-transparent
-        borderRadius: 60, // Arrondir les bords
-        color:'red',
-        
-      },
-
-
-
-})
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 4,
+  },
+  editButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#000',
+    marginLeft: 8,
+  },
+  logoutButton: {
+    position: 'absolute',
+    top: 40,
+    right: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 30,
+    padding: 8,
+    zIndex: 1,
+  },
+});
 
 export default styles;

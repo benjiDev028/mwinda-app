@@ -1,218 +1,175 @@
-import { StyleSheet, Dimensions } from 'react-native';
+import { StyleSheet, Dimensions, TouchableWithoutFeedback, Animated, FlatList } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import ImageViewer from 'react-native-image-zoom-viewer';
 
-const PRIMARY_COLOR = '#fec107';
-const SECONDARY_COLOR = '#ffffff';
-const NEUTRAL_COLOR = '#2c3e50';
-const { width } = Dimensions.get('window');
+// Ajouter dans les imports
+import { PinchGestureHandler, State } from 'react-native-gesture-handler';
 
+// Modifier la section Portfolio pour ajouter le long press
+const renderPortfolioItem = ({ item }) => (
+  <TouchableWithoutFeedback 
+    onLongPress={() => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      setSelectedImage(item);
+      setPortfolioModalVisible(true);
+    }}
+    delayLongPress={300}
+  >
+    <View style={styles.achievementItem}>
+      <Image source={{ uri: item.url }} style={styles.achievementImage} />
+      <LinearGradient colors={GRADIENT_OVERLAY} style={styles.achievementOverlay}>
+        <AntDesign name="heart" size={16} color="#fff" />
+        <Text style={styles.achievementLikes}>{item.likes}</Text>
+      </LinearGradient>
+    </View>
+  </TouchableWithoutFeedback>
+);
+
+// Ajouter un nouveau modal pour l'affichage des photos
+<Modal visible={portfolioModalVisible} transparent={true}>
+  <ImageViewer
+    imageUrls={portfolioImages}
+    index={portfolioImages.findIndex(img => img.id === selectedImage?.id)}
+    enableSwipeDown
+    onSwipeDown={() => setPortfolioModalVisible(false)}
+    renderHeader={() => (
+      <TouchableOpacity 
+        style={styles.closeButton}
+        onPress={() => setPortfolioModalVisible(false)}
+      >
+        <Ionicons name="close" size={28} color="#fff" />
+      </TouchableOpacity>
+    )}
+    renderFooter={() => (
+      <LinearGradient colors={['transparent', 'rgba(0,0,0,0.8)']} style={styles.modalFooter}>
+        <View style={styles.modalActions}>
+          <TouchableOpacity style={styles.iconButton}>
+            <Ionicons name="bookmark-outline" size={28} color="#fff" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.iconButton}>
+            <Ionicons name="share-social-outline" size={28} color="#fff" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.iconButton}>
+            <Ionicons name="download-outline" size={28} color="#fff" />
+          </TouchableOpacity>
+        </View>
+      </LinearGradient>
+    )}
+  />
+</Modal>
+
+// Amélioration des Stories avec animations
+const StoryCircle = ({ story, index, onPress }) => {
+  const scaleValue = new Animated.Value(1);
+
+  const handlePressIn = () => {
+    Animated.spring(scaleValue, {
+      toValue: 0.95,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scaleValue, {
+      toValue: 1,
+      friction: 3,
+      useNativeDriver: true,
+    }).start();
+    onPress();
+  };
+
+  return (
+    <Pressable 
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      style={styles.storyContainer}
+    >
+      <Animated.View style={[styles.storyBorder, { transform: [{ scale: scaleValue }] }]}>
+        <LinearGradient
+          colors={GRADIENT_START}
+          style={styles.storyGradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <Image source={{ uri: story.image }} style={styles.storyImage} />
+        </LinearGradient>
+        {index === 0 && (
+          <View style={styles.liveBadge}>
+            <Text style={styles.liveText}>LIVE</Text>
+          </View>
+        )}
+      </Animated.View>
+      <Text style={styles.storyUsername}>{story.username}</Text>
+    </Pressable>
+  );
+};
+
+// Styles mis à jour
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fafafa',
-    paddingTop: 50,
-  },
-  header: {
+  // Styles existants...
+  
+  // Nouveaux styles
+  modalFooter: {
     position: 'absolute',
-    top: 0,
+    bottom: 0,
     width: '100%',
-    zIndex: 100,
-    padding: 20,
-    backgroundColor: 'rgba(255,255,255,0.95)',
+    paddingVertical: 30,
+    paddingHorizontal: 20,
   },
-  headerTitle: {
-    fontSize: 26,
-    fontWeight: '800',
-    color: '#2d3436',
-    textAlign: 'center',
-    textTransform: 'uppercase',
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 25,
   },
-  section: {
-    marginVertical: 18,
-  },
-  sectionTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#2d3436',
-    marginBottom: 20,
-    paddingHorizontal: 24,
-  },
-  storyWrapper: {
-    alignItems: 'center',
-    marginHorizontal: 24,
-  },
-  storyBorder: {
-    width: 100,
-    height: 100,
+  iconButton: {
+    padding: 12,
+    backgroundColor: 'rgba(255,255,255,0.15)',
     borderRadius: 50,
-    padding: 3,
-    overflow: 'hidden',
-    position: 'relative',
   },
-  storyImage: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 48,
-  },
-  storyGlow: {
-    position: 'absolute',
-    width: 60,
-    height: '100%',
-    backgroundColor: 'rgba(255,255,255,0.3)',
-    transform: [{ skewX: '-20deg' }],
-  },
-  storyMeta: {
-    position: 'absolute',
-    bottom: -15,
-    width: '100%',
+  storyContainer: {
+    marginHorizontal: 8,
     alignItems: 'center',
   },
-  userContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '',
-    paddingHorizontal: 12,
-    
-    paddingVertical: 6,
-    borderRadius: 20,
+  storyGradient: {
+    padding: 2,
+    borderRadius: 60,
   },
-  storyUser: {
-    color: '#2d3436',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  verifiedBadge: {
-    marginLeft: 4,
-  },
-  servicesContainer: {
-    paddingLeft: 24,
-  },
-  serviceCard: {
-    width: width * 0.8,
-    height: 250,
-    marginRight: 20,
-    borderRadius: 20,
-    overflow: 'hidden',
-    elevation: 5,
-  },
-  serviceImage: {
-    width: '100%',
-    height: '100%',
-  },
-  serviceGradient: {
+  liveBadge: {
     position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: '40%',
-    padding: 15,
-    justifyContent: 'flex-end',
-  },
-  serviceName: {
-    color: '#fff',
-    fontSize: 22,
-    fontWeight: '700',
-    textShadowColor: 'rgba(0,0,0,0.3)',
-    textShadowRadius: 5,
-  },
-  serviceBadge: {
-    position: 'absolute',
-    top: 15,
-    right: 15,
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    padding: 8,
-    borderRadius: 15,
-  },
-  serviceBadgeText: {
-    color: '#2d3436',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  achievementsRow: {
-    marginHorizontal: 12,
-    justifyContent: 'space-between',
-  },
-  achievementItem: {
-    width: (width - 40) / 3,
-    height: (width - 40) / 3,
-    marginBottom: 8,
+    top: 10,
+    right: 10,
+    backgroundColor: ACCENT_COLOR,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
     borderRadius: 12,
-    overflow: 'hidden',
+    ...SHADOW_DEFAULT,
   },
-  achievementImage: {
-    width: '100%',
-    height: '100%',
-  },
-  achievementOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 6,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-  },
-  achievementLikes: {
+  liveText: {
     color: '#fff',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  storyUsername: {
+    marginTop: 8,
     fontSize: 12,
-    marginLeft: 4,
     fontWeight: '600',
+    color: DARK_COLOR,
+    maxWidth: 100,
+    textAlign: 'center',
   },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.96)',
-  },
-  fullscreenImage: {
-    flex: 1,
-    marginVertical: 60,
-  },
-  closeButton: {
-    position: 'absolute',
-    top: 75,
-    right: 24,
-    padding: 12,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    zIndex: 100,
-  },
-  progressBarContainer: {
-    position: 'absolute',
-    top: 60,
-    left: 24,
-    right: 24,
-    height: 3,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderRadius: 2,
-    zIndex: 100,
-  },
-  progressBar: {
-    height: '100%',
-    backgroundColor: '#fff',
-    borderRadius: 2,
-  },
-  storyFooter: {
-    position: 'absolute',
-    bottom: 50,
-    left: 24,
-    right: 24,
+  portfolioImageStat: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-  },
-  storyUserModal: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: '00',
-    textShadowColor: 'rgba(0,0,0,0.5)',
-    textShadowRadius: 8,
-  },
-  modalVerifiedBadge: {
-    marginLeft: 5,
-  },
-  modalLikeButton: {
-    padding: 12,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    padding: 6,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    position: 'absolute',
+    bottom: 8,
+    right: 8,
+  },
+  portfolioImageStatText: {
+    color: '#fff',
+    marginLeft: 4,
+    fontSize: 14,
   },
 });
-export default styles;

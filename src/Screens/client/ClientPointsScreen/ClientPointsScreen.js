@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, Animated } from "react-native";
-import LoyaltyService from "../../../Services/UserServices/LoyaltyService";
+import { View, Text, StyleSheet, Animated, ScrollView ,RefreshControl} from "react-native";
+import LoyaltyService from "../../../Services/LoyaltyServices/LoyaltyService";
 import { AuthContext } from '../../../context/AuthContext';
 import { useContext } from "react";
 import { MaterialIcons } from '@expo/vector-icons'; // Pour les icônes
+import { useTranslation } from 'react-i18next';
+
+
 
 export default function ClientPointsScreen() {
   const { id } = useContext(AuthContext);
@@ -11,6 +14,8 @@ export default function ClientPointsScreen() {
   const [eventPoints, setEventPoints] = useState(0);
   const [animatedStudio] = useState(new Animated.Value(0));
   const [animatedEvent] = useState(new Animated.Value(0));
+  const [refreshing,setRefreshing] =useState(false);
+  const {t} = useTranslation();
 
   // Fonction pour récupérer les points de fidélité
   const fetchPoints = async () => {
@@ -25,6 +30,12 @@ export default function ClientPointsScreen() {
   useEffect(() => {
     fetchPoints();
   }, []);
+
+  const onRefresh = async ()=>{
+    setRefreshing(true);
+    await fetchPoints();
+    setRefreshing(false);
+  }
 
   // Configurer un intervalle pour vérifier les mises à jour des points
   // useEffect(() => {
@@ -62,15 +73,26 @@ export default function ClientPointsScreen() {
   });
 
   return (
+    <ScrollView>
+       refreshControl={
+                    <RefreshControl
+                    refreshing={refreshing}
+                    onRefresh={onRefresh}
+                    colors={['#2196F3']}
+                    tintColors={['#FEC107']}
+                    />
+                  }
+
+   
     <View style={styles.container}>
       {/* Titre principal */}
-      <Text style={styles.title}>Vos Points</Text>
+      <Text style={styles.title}>{t('your points')}</Text>
 
       {/* Carte pour les points Studio */}
       <View style={styles.card}>
         <View style={styles.sectionHeader}>
           <MaterialIcons name="photo-camera" size={24} color="#FEC107" />
-          <Text style={styles.sectionTitle}>Studio Points : {studioPoints}</Text>
+          <Text style={styles.sectionTitle}>{t('studio points')} : {studioPoints}</Text>
         </View>
         <View style={styles.progressBarBackground}>
           <Animated.View style={[styles.progressBar, { width: progressStudio }]} />
@@ -81,7 +103,7 @@ export default function ClientPointsScreen() {
       <View style={styles.card}>
         <View style={styles.sectionHeader}>
           <MaterialIcons name="event" size={24} color="#4CAF50" />
-          <Text style={styles.sectionTitle}>Event Points : {eventPoints}</Text>
+          <Text style={styles.sectionTitle}>{t('event points')} : {eventPoints}</Text>
         </View>
         <View style={styles.progressBarBackground}>
           <Animated.View style={[styles.progressBar, { width: progressEvent }]} />
@@ -97,6 +119,7 @@ export default function ClientPointsScreen() {
         <Text style={styles.label}>50000</Text>
       </View>
     </View>
+    </ScrollView>
   );
 }
 

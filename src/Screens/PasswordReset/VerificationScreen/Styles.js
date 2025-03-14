@@ -4,9 +4,11 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#F8F9FA',
+        
     },
     header: {
         height: 220,
+        
         justifyContent: 'center',
         backgroundColor: '#fec107',
         borderBottomLeftRadius: 40,

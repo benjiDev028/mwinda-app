@@ -16,7 +16,7 @@ import {
   FlatList,
 } from "react-native";
 import { styles } from './Styles';
-import LoyaltyService from "../../../Services/UserServices/LoyaltyService";
+import LoyaltyService from "../../../Services/LoyaltyServices/LoyaltyService";
 import { CameraView, Camera } from "expo-camera";
 import Toast from "react-native-toast-message";
 import { AuthContext } from "../../../context/AuthContext";
@@ -28,10 +28,12 @@ export default function App() {
   const [manualEntry, setManualEntry] = useState(false);
   const [toastVisible, setToastVisible] = useState(false);
   const { id } = useContext(AuthContext);
+
   const [manualCode, setManualCode] = useState("");
   const [amount, setAmount] = useState("");
   const [currency, setCurrency] = useState("USD");
   const [service, setService] = useState("");
+  const [reference,setReference]=useState("");
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [animationValue] = useState(new Animated.Value(0));
 
@@ -101,27 +103,33 @@ export default function App() {
   };
 
   const handleValidateForm = async () => {
-    if (!manualCode || !amount || !currency || !service) {
+    if (!manualCode || !amount || !currency || !service || !reference) {
       Alert.alert("Erreur de validation", "Veuillez remplir tous les champs.");
       return;
     }
 
-    const response = await LoyaltyService.postEarnPoint(manualCode, amount, service, id);
-    if (!response) {
-      Alert.alert("Erreur", "Une erreur s'est produite lors de l'ajout des points.");
-    } else {
+    const response = await LoyaltyService.postEarnPoint(manualCode, amount, service,reference, id);
+    if (response) {
+      //Alert.alert("success", "Une erreur s'est produite lors de l'ajout des points.");
+     // Alert.alert("Succès", "Points ajoutés avec succès!");
+
       Toast.show({
         type: "success",
         position: "top",
         text1: "Points ajoutés!",
         text2: `Vous avez ajouté ${amount} ${currency} pour ${service} et le code ${manualCode}.`,
       });
+    } else {
+
+      Alert.alert("Erreur", "Une erreur s'est produite lors de l'ajout des points.");
+
     }
 
     setManualCode("");
     setAmount("");
     setCurrency("USD");
     setService("");
+    setReference("")
 
     setManualEntry(false);
     setCameraOpen(true);
@@ -210,7 +218,14 @@ export default function App() {
                     style={styles.input}
                     value={service}
                     onChangeText={setService}
-                    placeholder="Entrez le nom"
+                    placeholder="Entrez le nom du service"
+                  />
+                  <Text style={styles.label}>reference:</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={reference}
+                    onChangeText={setReference}
+                    placeholder="Entrez la reference"
                   />
 
                   <TouchableOpacity style={styles.validateButton} onPress={handleValidateForm}>

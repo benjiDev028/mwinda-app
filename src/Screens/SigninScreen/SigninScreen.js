@@ -18,6 +18,7 @@ import {
 import splash from '../../../assets/img/splash.png';
 import { useNavigation } from '@react-navigation/native';
 import styles from './Styles';
+import { useTranslation } from 'react-i18next';
 import UserService from '../../Services/UserServices/UserService';
 
 const validateEmail = (email) => {
@@ -37,6 +38,7 @@ export default function SignIn() {
   const [Password, setPassword] = useState('');
   const [date_birth, setDate_birth] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const { t } = useTranslation();
   const navigation = useNavigation();
 
   // Animations
@@ -83,7 +85,7 @@ export default function SignIn() {
         alert("Vous êtes bien inscrit");
         navigation.navigate("Login");
       } else {
-        if (response.error === "EMAIL_ALREADY_REGISTERED") {
+        if (response.status === "EMAIL_ALREADY_REGISTERED") {
           Alert.alert('Erreur', 'L\'email est déjà enregistré. Veuillez utiliser un autre email.');
         } else {
           Alert.alert('Erreur', response.error || "Une erreur est survenue, veuillez réessayer.");
@@ -121,25 +123,25 @@ export default function SignIn() {
             showsVerticalScrollIndicator={false}
           >
             <Animated.View style={[styles.form, { opacity: fadeAnim }]}>
-              <Text style={styles.title}>SIGN IN</Text>
+              <Text style={styles.title}>{t('signin')}</Text>
 
-              <Text style={styles.label}>Firstname</Text>
+              <Text style={styles.label}>{t('firstname')}</Text>
               <TextInput 
                 style={styles.input} 
                 onChangeText={setFirstname} 
-                placeholder="Firstname"
+                placeholder={t('firstname')}
                 placeholderTextColor="#999"
               />
 
-              <Text style={styles.label}>Lastname</Text>
+              <Text style={styles.label}>{t('lastname')}</Text>
               <TextInput 
                 style={styles.input} 
                 onChangeText={setLastname} 
-                placeholder="Lastname"
+                placeholder={t('lastname')}
                 placeholderTextColor="#999"
               />
 
-              <Text style={styles.label}>Email</Text>
+              <Text style={styles.label}>{t('email')}</Text>
               <TextInput 
                 style={styles.input} 
                 onChangeText={setEmail} 
@@ -148,7 +150,7 @@ export default function SignIn() {
                 keyboardType="email-address"
               />
 
-              <Text style={styles.label}>Date of birth</Text>
+              <Text style={styles.label}>{t('date_birth')}</Text>
               <TextInput 
                 style={styles.input}
                 onChangeText={setDate_birth}
@@ -157,7 +159,7 @@ export default function SignIn() {
                 keyboardType="decimal-pad"
               />
 
-              <Text style={styles.label}>Password</Text>
+              <Text style={styles.label}>{t('password')}</Text>
               <TextInput
                 style={styles.input}
                 placeholder="Password"
@@ -174,7 +176,7 @@ export default function SignIn() {
               >
                 {isLoading ? (
                   <ActivityIndicator color="#fff" />
-                ):( <Text style={styles.activeText}>Create Account</Text>)}
+                ):( <Text style={styles.activeText}>{t('create account button')}</Text>)}
                 
               </TouchableOpacity>
 
@@ -183,8 +185,8 @@ export default function SignIn() {
                 activeOpacity={0.6}
               >
                 <Text style={styles.already}>
-                  Vous avez déjà un compte ?{' '}
-                  <Text style={styles.connexion}>Connexion</Text>
+                {t('already have an account')}{' '}
+                  <Text style={styles.connexion}>{t('connexion')}</Text>
                 </Text>
               </TouchableOpacity>
             </Animated.View>

@@ -18,30 +18,37 @@ const Register = async (firstname, lastname, email, password, date_birth) => {
           }),
       });
 
-      // ✅ Vérifier le statut HTTP correctement
       if (response.status !== 201) {
-          const errorData = await response.json();
-          console.error("❌ Erreur d'inscription:", errorData.message || "Erreur inconnue");
-          return { success: false, error: errorData.error || 'Erreur lors de l\'inscription' };
+        const errorData = await response.json();
+        const errorType = errorData.detail?.error;
+        const errorMessage = errorType === "EMAIL_ALREADY_REGISTERED"
+          ? "Email déjà utilisé"
+          : errorData.message || "Erreur inconnue";
+  
+        console.error("❌ Erreur d'inscription:", errorMessage);
+        return { success: false, error: errorMessage };
       }
-
-      // ✅ Vérifier si le corps de la réponse est vide (cas 201 Created)
+  
+      // ✅ Vérifier si la réponse contient du JSON (cas 201 Created)
       let data;
       try {
-          data = await response.json();
+        data = await response.json();
       } catch (jsonError) {
-          console.warn("⚠ Réponse sans JSON, mais succès confirmé.");
-          data = {}; // Valeur vide si pas de JSON
+        console.warn("⚠ Réponse sans JSON, mais succès confirmé.");
+        data = {};
       }
-
+  
       console.log("✅ Utilisateur créé avec succès:", data);
       return { success: true, data };
-
-  } catch (error) {
+  
+    } catch (error) {
       console.error("❌ Erreur inattendue:", error);
       return { success: false, error: "Une erreur inattendue s'est produite." };
-  }
-};
+    }
+  };
+  
+     
+
 
 
 const updateUser = async (userId, updatedData, authToken) => {
@@ -137,6 +144,7 @@ const GetUserById =  async (id) => {
 
     if (response.ok) {
       const data = await response.json();
+      console.log(" donnees",data);
       return data;
     } else {
       const error = await response.json();
@@ -147,5 +155,29 @@ const GetUserById =  async (id) => {
   }
 }
 
-export default {Register,updateUser,GetUsers,GetStats,GetUserById};
+const DeleteUserById = async(id) => {
+  try{
+    const response = await fetch (`${url}/identity/delete_user_by_id/${id}`,
+    {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        },
+        })
+    
+    if (response.ok) {
+      console.log('User deleted successfully');
+      return true;
+      } else {
+        const error = await response.json();
+        console.log('Error deleting user:', error);
+        return false;
+      }
+     } catch{
+      console.log('Error deleting user:', error);
+    }
+  }
+
+
+export default {Register,updateUser,GetUsers,GetStats,GetUserById,DeleteUserById};
 

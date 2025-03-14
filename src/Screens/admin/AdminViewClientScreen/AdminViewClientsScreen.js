@@ -1,11 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, TextInput, 
-  Modal, 
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  TextInput,
+  Modal,
   ActivityIndicator,
   Animated,
-  Easing,RefreshControl
+  Easing,
+  RefreshControl,
+  Alert,
+  StyleSheet,
 } from 'react-native';
-import {styles} from './Styles';
+import {styles} from './Styles'
 import { Swipeable } from 'react-native-gesture-handler';
 import { MaterialIcons, Feather } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -15,47 +23,48 @@ import { useNavigation } from '@react-navigation/native';
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
 export default function AdminViewClientsScreen() {
-  // ... (le reste des états et fonctions reste inchangé)
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [favorites, setFavorites] = useState([]);
+  const [bonus, setBonus] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
-  const [filter, setFilter] = useState('all'); // Filter state (all, admin, client, favorites)
+  const [filter, setFilter] = useState('all');
   const [refreshing, setRefreshing] = useState(false);
 
   const navigation = useNavigation();
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(30)).current;
 
-  useEffect(() => {
-    const fetchUsers = async () => {
-      setLoading(true);
-      const data = await UserService.GetUsers();
-      console.log('Utilisateurs chargés:', data);
-
-      setUsers(data);
-      setFilteredUsers(data);
-
-      // Chargement des favoris depuis AsyncStorage lors de la première utilisation de l'app
-      const storedFavorites = await AsyncStorage.getItem('favorites');
-      if (storedFavorites) {
-        setFavorites(JSON.parse(storedFavorites));
-      }
-      setLoading(false);
-    };
-    fetchUsers();
-  }, []);
-
-
-  const onRefresh = async () => {
-    setRefreshing(true);
+  // Charger les utilisateurs
+  const fetchUsers = async () => {
+    setLoading(true);
     const data = await UserService.GetUsers();
     setUsers(data);
     setFilteredUsers(data);
+
+    // Charger les favoris depuis AsyncStorage
+    const storedFavorites = await AsyncStorage.getItem('favorites');
+    if (storedFavorites) {
+      setFavorites(JSON.parse(storedFavorites));
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  // Rafraîchir la liste
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchUsers();
     setRefreshing(false);
   };
 
+  // Filtrer les utilisateurs
   useEffect(() => {
     filterUsers();
   }, [filter, searchQuery]);
@@ -64,188 +73,198 @@ export default function AdminViewClientsScreen() {
     setSearchQuery(query);
   };
 
+  // Basculer les favoris
   const toggleFavorite = async (userId) => {
-    let updatedFavorites;
-    if (favorites.includes(userId)) {
-      updatedFavorites = favorites.filter(id => id !== userId);  // Supprimer du favoris
-    } else {
-      updatedFavorites = [...favorites, userId];  // Ajouter au favoris
-    }
+    let updatedFavorites = favorites.includes(userId)
+      ? favorites.filter((id) => id !== userId)
+      : [...favorites, userId];
     setFavorites(updatedFavorites);
-
-    // Sauvegarder les favoris dans AsyncStorage
     await AsyncStorage.setItem('favorites', JSON.stringify(updatedFavorites));
   };
 
+  // Filtrer les utilisateurs
   const filterUsers = () => {
     let updatedUsers = users;
+
     if (searchQuery.trim() !== '') {
-      updatedUsers = updatedUsers.filter(user =>
-        user.first_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.last_name.toLowerCase().includes(searchQuery.toLowerCase())
+      updatedUsers = updatedUsers.filter(
+        (user) =>
+          user.first_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          user.last_name.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
 
     if (filter === 'favorites') {
-      updatedUsers = updatedUsers.filter(user => favorites.includes(user.id));
+      updatedUsers = updatedUsers.filter((user) => favorites.includes(user.id));
     } else if (filter === 'admin') {
-      updatedUsers = updatedUsers.filter(user => user.role === 'admin'); // Filtre pour les admins
+      updatedUsers = updatedUsers.filter((user) => user.role === 'admin');
     } else if (filter === 'client') {
-      updatedUsers = updatedUsers.filter(user => user.role === 'client'); // Filtre pour les clients
+      updatedUsers = updatedUsers.filter((user) => user.role === 'client');
+    } else if (filter === 'bonus') {
+      updatedUsers = updatedUsers.filter(
+        (user) => user.pointstudios >= 5000 || user.pointevents >= 40000
+      );
     }
 
     setFilteredUsers(updatedUsers);
   };
 
-
-
-
-
+  // Gérer les actions (voir, éditer, supprimer)
   const handleAction = (userId, action) => {
     switch (action) {
       case 'view':
-
-      alert('Voir l\'utilisateur'+ userId);
-      const id = userId;
-      navigation.navigate('UserDetails',{ id}); // Naviguer vers UserDetails
-      console.log('id apres clique : ' + userId);
-      break;
+        navigation.navigate('UserDetails', { id: userId });
+        break;
       case 'edit':
-        alert('Éditer l\'utilisateur');
+        navigation.navigate('EditUser', { id: userId });
         break;
       case 'delete':
-        setUserToDelete(userId);
-        setShowDeleteModal(true);
+        Alert.alert(
+          'Avertissement',
+          'Êtes-vous sûr de vouloir supprimer cet utilisateur ?',
+          [
+            { text: 'Oui', onPress: () => deleteUser(userId) },
+            { text: 'Non', style: 'cancel' },
+          ]
+        );
         break;
       default:
         alert('Action inconnue');
     }
   };
 
-  const confirmDelete = async () => {
-    if (userToDelete !== null) {
-      // Effectuer la suppression (tu peux appeler UserService.DeleteUser 
-      console.log(`Utilisateur avec ID ${userToDelete} supprimé.`);
-      
-      // Fermer le modal après la suppression
-      setShowDeleteModal(false);
-      setUserToDelete(null);
-      
-      // Recharger la liste des utilisateurs après suppression (tu peux faire un appel API si nécessaire)
-      const updatedUsers = users.filter(user => user.id !== userToDelete);
-      setUsers(updatedUsers);
-      setFilteredUsers(updatedUsers);
+  // Supprimer un utilisateur
+  const deleteUser = async (userId) => {
+    try {
+      await UserService.DeleteUserById(userId);
+      await fetchUsers();
+      Alert.alert('Succès', 'Utilisateur supprimé avec succès.');
+    } catch (error) {
+      Alert.alert('Erreur', 'Une erreur est survenue lors de la suppression.');
     }
   };
 
-
-  const fadeAnim = useState(new Animated.Value(0))[0];
-  const slideAnim = useState(new Animated.Value(30))[0];
-
+  // Animation d'entrée
   useEffect(() => {
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
         duration: 800,
-        useNativeDriver: true
+        useNativeDriver: true,
       }),
       Animated.spring(slideAnim, {
         toValue: 0,
         speed: 0.5,
-        useNativeDriver: true
-      })
+        useNativeDriver: true,
+      }),
     ]).start();
   }, []);
 
+  // Rendu d'un utilisateur
   const renderItem = ({ item, index }) => {
-    const inputRange = [0, 1];
-    const translateY = fadeAnim.interpolate({
-      inputRange,
-      outputRange: [50 * (index + 1), 0]
-    });
+    const isEligibleForBonus =
+      item.pointstudios >= 5000 || item.pointevents >= 40000;
 
     return (
-      <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY }] }}>
-        <Swipeable 
+      <Animated.View
+        style={{
+          opacity: fadeAnim,
+          transform: [{ translateY: slideAnim }],
+        }}
+      >
+        <Swipeable
           renderLeftActions={() => renderLeftActions(item.id)}
           friction={2}
           overshootFriction={8}
         >
-          <View style={[styles.userItem, favorites.includes(item.id) && styles.favoriteItem]}>
+          <View
+            style={[
+              styles.userItem,
+              favorites.includes(item.id) && styles.favoriteItem,
+              isEligibleForBonus && styles.bonusItem,
+            ]}
+          >
             <View style={styles.userInfo}>
-              <Text style={styles.userName}>{item.first_name} {item.last_name}</Text>
+              <Text style={styles.userName}>
+                {item.first_name} {item.last_name}
+              </Text>
               <Text style={styles.userEmail}>{item.email}</Text>
             </View>
-            <Feather 
-              name={favorites.includes(item.id) ? "star" : "star"} 
-              size={24} 
-              color={favorites.includes(item.id) ? "#FFD700" : "#ccc"} 
-              style={styles.favoriteIcon}
-            />
+            {isEligibleForBonus && (
+              <View style={styles.bonusBadge}>
+                <Feather name="bell" size={16} color="#FFFFFF" />
+              </View>
+            )}
+            {/* Icône d'étoile avec gestionnaire onPress */}
+            <TouchableOpacity onPress={() => toggleFavorite(item.id)}>
+              <Feather
+                name={favorites.includes(item.id) ? 'star' : 'star'}
+                size={24}
+                color={favorites.includes(item.id) ? '#FFD700' : '#ccc'}
+                style={styles.favoriteIcon}
+              />
+            </TouchableOpacity>
           </View>
         </Swipeable>
       </Animated.View>
     );
   };
 
+  // Actions swipeables
   const renderLeftActions = (userId) => {
-    const scale = new Animated.Value(1);
-    
-    const animatePress = (newValue) => {
-      Animated.spring(scale, {
-        toValue: newValue,
-        friction: 3,
-        useNativeDriver: true
-      }).start();
-    };
-
     return (
       <View style={styles.actionsContainer}>
-        <AnimatedTouchable 
-          style={[styles.actionButton, { transform: [{ scale }] }]}
-          onPressIn={() => animatePress(0.9)}
-          onPressOut={() => animatePress(1)}
+        <TouchableOpacity
+          style={[styles.actionButton, { backgroundColor: '#2196F3' }]}
           onPress={() => handleAction(userId, 'view')}
         >
           <MaterialIcons name="visibility" size={20} color="white" />
-        </AnimatedTouchable>
-
-        <AnimatedTouchable 
-          style={[styles.actionButton, { transform: [{ scale }], backgroundColor: '#4CAF50' }]}
-          onPressIn={() => animatePress(0.9)}
-          onPressOut={() => animatePress(1)}
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.actionButton, { backgroundColor: '#4CAF50' }]}
           onPress={() => handleAction(userId, 'edit')}
         >
           <MaterialIcons name="edit" size={20} color="white" />
-        </AnimatedTouchable>
-
-        <AnimatedTouchable 
-          style={[styles.actionButton, { transform: [{ scale }], backgroundColor: '#F44336' }]}
-          onPressIn={() => animatePress(0.9)}
-          onPressOut={() => animatePress(1)}
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.actionButton, { backgroundColor: '#F44336' }]}
           onPress={() => handleAction(userId, 'delete')}
         >
           <MaterialIcons name="delete" size={20} color="white" />
-        </AnimatedTouchable>
+        </TouchableOpacity>
       </View>
     );
   };
 
   return (
-    <Animated.View style={[styles.container, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+    <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
       <Text style={styles.header}>Gestion des Utilisateurs</Text>
 
       <View style={styles.filterContainer}>
-        {['all', 'admin', 'client', 'favorites'].map((filterType) => (
-          <TouchableOpacity 
+        {['all', 'admin', 'favorites', 'bonus'].map((filterType) => (
+          <TouchableOpacity
             key={filterType}
-            style={[styles.filterButton, filter === filterType && styles.activeFilter]}
+            style={[
+              styles.filterButton,
+              filter === filterType && styles.activeFilter,
+            ]}
             onPress={() => setFilter(filterType)}
           >
-            <Text style={[styles.filterText, filter === filterType && styles.activeFilterText]}>
-              {filterType === 'all' ? 'Tous' : 
-               filterType === 'admin' ? 'Admins' : 
-               filterType === 'client' ? 'Clients' : 'Favoris'}
+            <Text
+              style={[
+                styles.filterText,
+                filter === filterType && styles.activeFilterText,
+              ]}
+            >
+              {filterType === 'all'
+                ? 'Tous'
+                : filterType === 'admin'
+                ? 'Admins'
+                : filterType === 'client'
+                ? 'Clients'
+                : filterType === 'favorites'
+                ? 'Favoris'
+                : 'Bonus'}
             </Text>
           </TouchableOpacity>
         ))}
@@ -281,19 +300,14 @@ export default function AdminViewClientsScreen() {
           }
           refreshControl={
             <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={['#2196F3']}
-            tintColors={['#FEC107']}
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={['#2196F3']}
+              tintColor="#FEC107"
             />
           }
         />
       )}
-
-      {/* Modal reste inchangé */}
     </Animated.View>
   );
 }
-
-
-

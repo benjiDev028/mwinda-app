@@ -15,12 +15,14 @@ import ResetPasswordService from "../../../Services/PasswordServices/ResetPasswo
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 import styles from './Styles';
+import { useTranslation } from 'react-i18next';
+
 
 export default function VerificationScreen() {
     const [Code, setCode] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const navigation = useNavigation();
-    
+    const {t} = useTranslation();    
     // Animations
     const logoScale = useState(new Animated.Value(0.8))[0];
     const formOpacity = useState(new Animated.Value(0))[0];
@@ -80,7 +82,7 @@ export default function VerificationScreen() {
     return (
         <View style={styles.container}>
             {/* Header animé */}
-            <Animated.View style={[styles.header, { transform: [{ scale: logoScale }] }]}>
+            <Animated.View style={[styles.header]}>
                 <Image source={splash} style={styles.logo} />
             </Animated.View>
 
@@ -89,8 +91,8 @@ export default function VerificationScreen() {
                 opacity: formOpacity,
                 transform: [{ translateY: formPosition }]
             }]}>
-                <Text style={styles.title}>Vérification de sécurité</Text>
-                <Text style={styles.subtitle}>Entrez le code reçu par e-mail</Text>
+                <Text style={styles.title}>{t('verification')}</Text>
+                <Text style={styles.subtitle}>{t('enter the code')}</Text>
 
                 <TextInput
                     style={styles.codeInput}
@@ -113,7 +115,7 @@ export default function VerificationScreen() {
                      <ActivityIndicator size="small" color="#fff" /> 
                     ):( 
                     
-                    <Text style={styles.buttonText}>Vérifier le code</Text>)}
+                    <Text style={styles.buttonText}>{t('verify code btn')}</Text>)}
                 </TouchableOpacity>
             </Animated.View>
         </View>
