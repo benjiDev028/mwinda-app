@@ -1,4 +1,8 @@
-const url = "http://192.168.2.13:8001";
+import { API_URL,PORT_USER } from '@env'
+
+
+// const url = "http://192.168.2.13:8002";
+const url = `${API_URL}${PORT_USER}`
 
 async function Login(email, password) {
   try {

@@ -1,20 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Alert,
-  Image,
-  Text,
-  TouchableOpacity,
-  View,
-  TextInput,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  TouchableWithoutFeedback,
-  Keyboard,
-  Animated,
-  ActivityIndicator,
-  Easing
-} from 'react-native';
+import {Alert,Image,Text,TouchableOpacity,View,TextInput,ScrollView,KeyboardAvoidingView,Platform,TouchableWithoutFeedback,Keyboard,Animated,ActivityIndicator,Easing} from 'react-native';
 import splash from '../../../assets/img/splash.png';
 import { useNavigation } from '@react-navigation/native';
 import styles from './Styles';
@@ -63,17 +48,17 @@ export default function SignIn() {
 
  const handleLogin = async () => {
     if (Firstname === '' || Lastname === '' || Email === '' || Password === '' || date_birth === '') {
-      Alert.alert('Erreur', 'Tous les champs sont obligatoires.');
+      Alert.alert('Avertissement', 'Tous les champs sont obligatoires.');
       return;
     }
 
     if (!validateEmail(Email)) {
-      Alert.alert('Erreur', 'Veuillez entrer un email valide.');
+      Alert.alert('Avertissement', 'Veuillez entrer un email valide.');
       return;
     }
 
     if (!validatePassword(Password)) {
-      Alert.alert('Erreur', 'Le mot de passe doit contenir au moins 6 caractères, une lettre, un chiffre et un caractère spécial.');
+      Alert.alert('Avertissement', 'Le mot de passe doit contenir au moins 6 caractères, une lettre, un chiffre et un caractère spécial.');
       return;
     }
 
@@ -86,14 +71,14 @@ export default function SignIn() {
         navigation.navigate("Login");
       } else {
         if (response.status === "EMAIL_ALREADY_REGISTERED") {
-          Alert.alert('Erreur', 'L\'email est déjà enregistré. Veuillez utiliser un autre email.');
+          Alert.alert('Avertissement', 'L\'email est déjà enregistré. Veuillez utiliser un autre email.');
         } else {
-          Alert.alert('Erreur', response.error || "Une erreur est survenue, veuillez réessayer.");
+          Alert.alert('Avertissement', response.error || "Une erreur est survenue, veuillez réessayer.");
         }
       }
     } catch (error) {
       console.error("Error during registration:", error);
-      Alert.alert('Erreur', "Une erreur est survenue. Veuillez vérifier votre connexion ou réessayer plus tard.");
+      Alert.alert('Avertissement', "Une erreur est survenue. Veuillez vérifier votre connexion ou réessayer plus tard.");
     }finally{
       setIsLoading(false);
     }

@@ -1,38 +1,45 @@
 {
   "expo": {
-    "name": "mwinda",
-    "slug": "mwinda",
+    "name": "Mwinda",
+    "slug": "Mwinda",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/splash.png",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "backgroundColor": "#fec107",
     "newArchEnabled": true,
     "permissions": ["CAMERA"],
-    
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#fec107"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
+       "jsEngine": "jsc",
       "bundleIdentifier": "com.yourapp.identifier",
       "infoPlist": {
         "NSMicrophoneUsageDescription": "This app requires microphone access"
       }
     },
     "android": {
+       "jsEngine": "jsc",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/splash.png",
-        "backgroundColor": "#fec107",
-        "permissions": ["CAMERA"]
-        
-      }
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#fec107"
+      },
+      "useNextNotificationsApi": true
     },
     "web": {
-      "favicon": "./assets/splash-logo.jpg"
+      "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "expo-localization",
-      
-
-      "expo-barcode-scanner"
+      "expo-barcode-scanner",
+      "expo-notifications"
     ]
   }
 }

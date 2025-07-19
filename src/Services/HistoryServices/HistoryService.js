@@ -1,7 +1,9 @@
 import UserService from "../UserServices/UserService";
+import { API_URL,PORT_HISTORY } from '@env'
 
+const url = `${API_URL}${PORT_HISTORY}`
 
-const url = "http://192.168.2.13:8004";
+// const url = "http://192.168.2.13:8004";
 
 
 

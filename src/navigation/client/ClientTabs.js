@@ -34,7 +34,7 @@ export default function ClientStack() {
         component={ClientPointsScreen}
         options={{
           tabBarLabel: t('points'),
-          tabBarBadge: 3,
+         
           tabBarBadgeStyle: { backgroundColor: '#ff0000', color: '#fff' },
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="chart-line" color={color} size={size} />
@@ -46,7 +46,7 @@ export default function ClientStack() {
         component={ClientCodebarScreen}
         options={{
           tabBarLabel: t('codebar'),
-          tabBarBadge: 3,
+          // tabBarBadge: 3,
           tabBarBadgeStyle: { backgroundColor: '#ff0000', color: '#fff' },
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="barcode-scan" color={color} size={size} />

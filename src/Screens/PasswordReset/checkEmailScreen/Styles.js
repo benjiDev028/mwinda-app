@@ -1,4 +1,4 @@
-import { StyleSheet } from "react-native";
+import { StyleSheet,Platform } from "react-native";
 
 const styles = StyleSheet.create({
     container: {
@@ -17,6 +17,32 @@ const styles = StyleSheet.create({
         shadowRadius: 12,
         elevation: 8,
     },
+    snackbarContainer: {
+    position: 'absolute',
+    top: Platform.OS === 'android' ? StatusBar.currentHeight : 44,
+    left: 0,
+    right: 0,
+    zIndex: 999,
+  },
+  snackbarWrapper: {
+    top: 0,
+    bottom: 'auto',
+  },
+  snackbar: {
+    backgroundColor: '#333',
+    marginHorizontal: 16,
+    borderRadius: 8,
+  },
+  successSnackbar: {
+    backgroundColor: '#4CAF50',
+  },
+  errorSnackbar: {
+    backgroundColor: '#F44336',
+  },
+  snackbarText: {
+    color: '#FFFFFF',
+    textAlign: 'center',
+  },
     logo: {
         width: '80%',
         height: '60%',

@@ -1,175 +1,167 @@
-import { StyleSheet, Dimensions, TouchableWithoutFeedback, Animated, FlatList } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import ImageViewer from 'react-native-image-zoom-viewer';
+import { StyleSheet } from "react-native";
 
-// Ajouter dans les imports
-import { PinchGestureHandler, State } from 'react-native-gesture-handler';
-
-// Modifier la section Portfolio pour ajouter le long press
-const renderPortfolioItem = ({ item }) => (
-  <TouchableWithoutFeedback 
-    onLongPress={() => {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      setSelectedImage(item);
-      setPortfolioModalVisible(true);
-    }}
-    delayLongPress={300}
-  >
-    <View style={styles.achievementItem}>
-      <Image source={{ uri: item.url }} style={styles.achievementImage} />
-      <LinearGradient colors={GRADIENT_OVERLAY} style={styles.achievementOverlay}>
-        <AntDesign name="heart" size={16} color="#fff" />
-        <Text style={styles.achievementLikes}>{item.likes}</Text>
-      </LinearGradient>
-    </View>
-  </TouchableWithoutFeedback>
-);
-
-// Ajouter un nouveau modal pour l'affichage des photos
-<Modal visible={portfolioModalVisible} transparent={true}>
-  <ImageViewer
-    imageUrls={portfolioImages}
-    index={portfolioImages.findIndex(img => img.id === selectedImage?.id)}
-    enableSwipeDown
-    onSwipeDown={() => setPortfolioModalVisible(false)}
-    renderHeader={() => (
-      <TouchableOpacity 
-        style={styles.closeButton}
-        onPress={() => setPortfolioModalVisible(false)}
-      >
-        <Ionicons name="close" size={28} color="#fff" />
-      </TouchableOpacity>
-    )}
-    renderFooter={() => (
-      <LinearGradient colors={['transparent', 'rgba(0,0,0,0.8)']} style={styles.modalFooter}>
-        <View style={styles.modalActions}>
-          <TouchableOpacity style={styles.iconButton}>
-            <Ionicons name="bookmark-outline" size={28} color="#fff" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton}>
-            <Ionicons name="share-social-outline" size={28} color="#fff" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton}>
-            <Ionicons name="download-outline" size={28} color="#fff" />
-          </TouchableOpacity>
-        </View>
-      </LinearGradient>
-    )}
-  />
-</Modal>
-
-// Amélioration des Stories avec animations
-const StoryCircle = ({ story, index, onPress }) => {
-  const scaleValue = new Animated.Value(1);
-
-  const handlePressIn = () => {
-    Animated.spring(scaleValue, {
-      toValue: 0.95,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  const handlePressOut = () => {
-    Animated.spring(scaleValue, {
-      toValue: 1,
-      friction: 3,
-      useNativeDriver: true,
-    }).start();
-    onPress();
-  };
-
-  return (
-    <Pressable 
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      style={styles.storyContainer}
-    >
-      <Animated.View style={[styles.storyBorder, { transform: [{ scale: scaleValue }] }]}>
-        <LinearGradient
-          colors={GRADIENT_START}
-          style={styles.storyGradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          <Image source={{ uri: story.image }} style={styles.storyImage} />
-        </LinearGradient>
-        {index === 0 && (
-          <View style={styles.liveBadge}>
-            <Text style={styles.liveText}>LIVE</Text>
-          </View>
-        )}
-      </Animated.View>
-      <Text style={styles.storyUsername}>{story.username}</Text>
-    </Pressable>
-  );
+const COLORS = {
+  primary: '#FEC109',
+  dark: '#121212',
+  light: '#FFFFFF',
+  text: '#333333',
+  lightText: '#666666',
+  background: '#F8F9FA',
+  cardBorder: '#E9ECEF',
+  secondary: '#6C757D',
+  accentBlue: '#0D6EFD',
+  accentGreen: '#198754'
 };
-
-// Styles mis à jour
-const styles = StyleSheet.create({
-  // Styles existants...
-  
-  // Nouveaux styles
-  modalFooter: {
-    position: 'absolute',
-    bottom: 0,
-    width: '100%',
-    paddingVertical: 30,
-    paddingHorizontal: 20,
+export const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.background,
   },
-  modalActions: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 25,
+  scrollContainer: {
+    paddingBottom: 30,
   },
-  iconButton: {
-    padding: 12,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderRadius: 50,
-  },
-  storyContainer: {
-    marginHorizontal: 8,
+  header: {
+    paddingHorizontal: 25,
+    paddingTop: 40,
+    paddingBottom: 30,
     alignItems: 'center',
+    backgroundColor: COLORS.light,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
   },
-  storyGradient: {
-    padding: 2,
-    borderRadius: 60,
+  logoBadge: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: COLORS.dark,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 15,
   },
-  liveBadge: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    backgroundColor: ACCENT_COLOR,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 12,
-    ...SHADOW_DEFAULT,
+  slogan: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: COLORS.dark,
+    textAlign: 'center',
+    marginBottom: 8,
+    letterSpacing: 0.5,
   },
-  liveText: {
-    color: '#fff',
-    fontSize: 10,
-    fontWeight: '800',
+  subSlogan: {
+    fontSize: 14,
+    color: COLORS.secondary,
+    textAlign: 'center',
+    maxWidth: '80%',
+    lineHeight: 20,
   },
-  storyUsername: {
-    marginTop: 8,
-    fontSize: 12,
+  servicesContainer: {
+    paddingHorizontal: 20,
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 13,
     fontWeight: '600',
-    color: DARK_COLOR,
-    maxWidth: 100,
+    color: COLORS.secondary,
+    letterSpacing: 1.5,
+    textAlign: 'center',
+    marginBottom: 25,
+    textTransform: 'uppercase',
+  },
+  servicesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  serviceCard: {
+    width: '48%',
+    backgroundColor: COLORS.light,
+    borderRadius: 10,
+    padding: 18,
+    marginBottom: 15,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.cardBorder,
+    borderTopWidth: 0,
+  },
+  serviceIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  serviceName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.dark,
+    marginBottom: 8,
     textAlign: 'center',
   },
-  portfolioImageStat: {
+  serviceDescription: {
+    fontSize: 12,
+    color: COLORS.lightText,
+    textAlign: 'center',
+    marginBottom: 15,
+    lineHeight: 18,
+  },
+  separator: {
+    height: 1,
+    width: '100%',
+    backgroundColor: COLORS.cardBorder,
+    marginBottom: 12,
+  },
+  ctaContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    padding: 6,
-    borderRadius: 20,
-    position: 'absolute',
-    bottom: 8,
-    right: 8,
   },
-  portfolioImageStatText: {
-    color: '#fff',
-    marginLeft: 4,
-    fontSize: 14,
+  ctaText: {
+    fontSize: 12,
+    color: COLORS.primary,
+   
+    fontWeight: '600',
+    marginRight: 5,
+    
+  },
+  loyaltyCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: COLORS.light,
+    borderRadius: 12,
+    padding: 18,
+    marginHorizontal: 20,
+    borderWidth: 1,
+    borderColor: COLORS.cardBorder,
+  },
+  loyaltyContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  loyaltyIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#FFF9C4',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  loyaltyTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: COLORS.secondary,
+    letterSpacing: 1,
+    marginBottom: 2,
+  },
+  loyaltyPoints: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: COLORS.dark,
   },
 });

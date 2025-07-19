@@ -1,252 +1,150 @@
-import React, { useState, useEffect, useRef } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  Image,
-  TouchableOpacity,
-  Modal,
-  Pressable,
-  Animated,
-  Easing,
-  ScrollView,
-  Dimensions,
-} from 'react-native';
-import  styles  from './Styles';
-import { LinearGradient } from 'expo-linear-gradient';
-import { AntDesign, Feather, MaterialIcons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import React, { useEffect, useState, useContext } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView ,RefreshControl} from 'react-native';
+import { AntDesign } from '@expo/vector-icons';
+import LoyaltyService from "../../../Services/LoyaltyServices/LoyaltyService";
+import { AuthContext } from '../../../context/AuthContext';
+import ClientStack from '../../../navigation/client/ClientTabs';
+import {styles} from "./Styles";
 
-// Importation des images locales
-import studio1 from '../../../../assets/services/studio6.jpg';
-import mariageCivil from '../../../../assets/services/seance2.jpg';
-import mariageCoutumier from '../../../../assets/services/mariage16.jpeg';
-import evenements from '../../../../assets/services/anniv1.jpg';
+const COLORS = {
+  primary: '#FEC109',
+  dark: '#121212',
+  light: '#FFFFFF',
+  text: '#333333',
+  lightText: '#666666',
+  background: '#F8F9FA',
+  cardBorder: '#E9ECEF',
+  secondary: '#6C757D',
+  accentBlue: '#0D6EFD',
+  accentGreen: '#198754'
+};
 
-const { width, height } = Dimensions.get('window');
-
-const stories = [
+const services = [
   { 
     id: '1', 
-    url: 'https://picsum.photos/300/300?random=1', 
-    user: 'Mwinda', 
-    isVerified: true 
+    name: 'Studio', 
+    description: 'Séances photo professionnelles',
+    icon: 'camerao',
+    accent: '#0D6EFD' // Bleu
+  },
+  { 
+    id: '2', 
+    name: 'Mariages', 
+    description: 'Immortalisez votre jour .',
+    icon: 'heart',
+    accent: '#DC3545' // Rouge
+  },
+  { 
+    id: '3', 
+    name: 'Événements', 
+    description: 'Anniversaires et célébrations',
+    icon: 'calendar',
+    accent: '#198754' // Vert
+  },
+  { 
+    id: '4', 
+    name: 'Outdoor', 
+    description: 'Photos professionnelles',
+    icon: 'cloudo',
+    accent: '#6F42C1' // Violet
   },
 ];
 
-const services = [
-  { id: '1', name: 'Photo Studio', imageUrl: studio1 },
-  { id: '2', name: 'Mariage Civil', imageUrl: mariageCivil },
-  { id: '3', name: 'Mariage Coutumier', imageUrl: mariageCoutumier },
-  { id: '4', name: 'Événements Spéciaux', imageUrl: evenements },
-];
+export default function ClientHomeScreen({navigation}) {
+  const [studioPoints, setStudioPoints] = useState(0);
+  const [eventPoints, setEventPoints] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
+  const { id } = useContext(AuthContext);
 
-const achievements = [...Array(50)].map((_, i) => ({
-  id: String(i),
-  url: `https://picsum.photos/${300 + i}/${300 + i}?achievement=${i}`,
-  likes: Math.floor(Math.random() * 100),
-}));
-
-export default function ClientHomeScreen() {
-  const navigation = useNavigation();
-  const [selectedStory, setSelectedStory] = useState(null);
-  const [progress] = useState(new Animated.Value(0));
-  const scrollY = useRef(new Animated.Value(0)).current;
-  const lightPosition = useRef(new Animated.Value(0)).current;
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-
-  // Gestion des stories
-  useEffect(() => {
-    if (selectedStory) {
-      progress.setValue(0);
-      Animated.timing(progress, {
-        toValue: 1,
-        duration: 5000,
-        useNativeDriver: false,
-      }).start();
-
-      const timer = setTimeout(() => {
-        setSelectedStory(null);
-      }, 5000);
-
-      return () => clearTimeout(timer);
+  const fetchPoints = async () => {
+    const data = await LoyaltyService.getLoyaltyPoint(id);
+    if (data) {
+      setStudioPoints(data.pointstudios || 0);
+      setEventPoints(data.pointevents || 0);
     }
-  }, [selectedStory]);
-
-  const openStory = (story) => setSelectedStory(story);
-
-  const closeModal = () => {
-    setSelectedStory(null);
-    progress.setValue(0);
   };
 
-
-  // Animations
   useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(lightPosition, {
-          toValue: 1,
-          duration: 2000,
-          easing: Easing.linear,
-          useNativeDriver: true,
-        }),
-        Animated.timing(lightPosition, {
-          toValue: 0,
-          duration: 0,
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 1000,
-      useNativeDriver: true,
-    }).start();
+    fetchPoints();
   }, []);
 
-  const headerTranslateY = scrollY.interpolate({
-    inputRange: [0, 100],
-    outputRange: [0, -70],
-    extrapolate: 'clamp',
-  });
-
-  const renderServiceItem = ({ item }) => (
-    <TouchableOpacity 
-     
-      style={styles.serviceCard}>
-      <Image source={item.imageUrl} style={styles.serviceImage} />
-      <LinearGradient
-        colors={['transparent', 'rgba(0,0,0,0.8)']}
-        style={styles.serviceGradient}>
-        <Text style={styles.serviceName}>{item.name}</Text>
-       
-      </LinearGradient>
-    </TouchableOpacity>
-  );
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchPoints();
+    setRefreshing(false);
+  };
 
   return (
-    <Animated.ScrollView 
-      style={[styles.container, { opacity: fadeAnim }]}
-      scrollEventThrottle={8}>
-
-      {/* Section Stories */}
-      <View style={styles.section}>
-        
-        <View style={styles.storyWrapper}>
-          <TouchableOpacity onPress={() => openStory(stories[0])} activeOpacity={0.9}>
-            <LinearGradient
-              colors={['#FF6B6B', '#FF8E53', '#FFD93D']}
-              style={styles.storyBorder}>
-              <Image 
-                source={{ uri: stories[0].url }} 
-                style={styles.storyImage} 
-                resizeMode="cover"
-              />
-              <Animated.View style={[
-                styles.storyGlow,
-                { transform: [{ translateX: lightPosition.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [-100, 200],
-                })}] }
-              ]}/>
-            </LinearGradient>
-            <View style={styles.storyMeta}>
-              <View style={styles.userContainer}>
-                <Text style={styles.storyUser}>{stories[0].user}</Text>
-                <MaterialIcons 
-                  name="verified" 
-                  size={14} 
-                  color="#4A90E2" 
-                  style={styles.verifiedBadge} 
-                />
-              </View>
-            </View>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Section Services */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Nos Prestations</Text>
-        <FlatList
-          horizontal
-          data={services}
-          renderItem={renderServiceItem}
-          keyExtractor={(item) => item.id}
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.servicesContainer}
-        />
-      </View>
-
-      {/* Section Réalisations */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Notre Portfolio</Text>
-        <FlatList
-          data={achievements}
-          numColumns={3}
-          keyExtractor={(item) => item.id}
-          columnWrapperStyle={styles.achievementsRow}
-          renderItem={({ item }) => (
-            <TouchableOpacity 
-              style={styles.achievementItem}
-              onPress={() => navigation.navigate('Gallery', { photo: item })}>
-              <Image
-                source={{ uri: item.url }}
-                style={styles.achievementImage}
-                resizeMode="cover"
-              />
-              <LinearGradient
-                colors={['transparent', 'rgba(0,0,0,0.5)']}
-                style={styles.achievementOverlay}>
-                <AntDesign name="heart" size={16} color="#fff" />
-                <Text style={styles.achievementLikes}>{item.likes}</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          )}
-        />
-      </View>
-
-      {/* Modal Story */}
-      <Modal visible={!!selectedStory} transparent statusBarTranslucent animationType="fade">
-        <View style={styles.modalContainer}>
-          <Pressable style={styles.closeButton} onPress={closeModal}>
-            <Feather name="x" size={28} color="#fff" />
-          </Pressable>
-          
-          <Animated.View style={styles.progressBarContainer}>
-            <Animated.View style={[
-              styles.progressBar,
-              { width: progress.interpolate({
-                inputRange: [0, 1],
-                outputRange: ['0%', '100%'],
-              })}
-            ]}/>
-          </Animated.View>
-
-          <Image 
-            source={{ uri: selectedStory?.url }} 
-            style={styles.fullscreenImage} 
-            resizeMode="contain"
+    <SafeAreaView style={styles.container}>
+      <ScrollView 
+        contentContainerStyle={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={COLORS.primary}
           />
+        }
+      >
+        {/* En-tête */}
+        <View style={styles.header}>
+          <View style={styles.logoBadge}>
+            <AntDesign name="camera" size={24} color={COLORS.light} />
+          </View>
+          <Text style={styles.slogan}>L'ART DE CAPTURER L'ÉMOTION</Text>
+          <Text style={styles.subSlogan}>Des souvenirs qui durent toute une vie</Text>
+        </View>
+
+        {/* Section Services */}
+        <View style={styles.servicesContainer}>
+          <Text style={styles.sectionTitle}>NOS SERVICES EXCLUSIFS</Text>
           
-          <View style={styles.storyFooter}>
-            <View style={styles.userContainer}>
-              <Text style={styles.storyUserModal}>@{selectedStory?.user}</Text>
-              <MaterialIcons 
-                name="verified" 
-                size={18} 
-                color="#4A90E2" 
-                style={styles.modalVerifiedBadge} 
-              />
-            </View>
-           
+          <View style={styles.servicesGrid}>
+            {services.map((service) => (
+              <TouchableOpacity 
+                key={service.id} 
+                style={[
+                  styles.serviceCard,
+                  { borderTopColor: service.accent, borderTopWidth: 3 }
+                ]}
+              >
+                <View style={[styles.serviceIcon, { backgroundColor: `${service.accent}20` }]}>
+                  <AntDesign name={service.icon} size={20} color={service.accent} />
+                </View>
+                <Text style={styles.serviceName}>{service.name}</Text>
+                <Text style={styles.serviceDescription}>{service.description}</Text>
+                <View style={styles.separator} />
+                <View style={styles.ctaContainer}>
+                  <Text style={[styles.ctaText, { color: service.accent }]}>Explorer</Text>
+                  <AntDesign name="arrowright" size={14} color= {service.accent } />
+                </View>
+              </TouchableOpacity>
+            ))}
           </View>
         </View>
-      </Modal>
-    </Animated.ScrollView>
+
+        {/* Programme de fidélité */}
+        <TouchableOpacity 
+          style={styles.loyaltyCard}
+          onPress={() => navigation.navigate('points')}
+        >
+          <View style={styles.loyaltyContent}>
+            <View style={styles.loyaltyIcon}>
+              <AntDesign name="star" size={20} color={COLORS.dark} />
+            </View>
+            <View>
+              <Text style={styles.loyaltyTitle}>VOTRE RÉCOMPENSE</Text>
+              <Text style={styles.loyaltyPoints}>
+                {studioPoints + eventPoints} 
+                <Text style={{ color: COLORS.primary }}> ★</Text>
+              </Text>
+            </View>
+          </View>
+          <AntDesign name="right" size={16} color={COLORS.secondary} />
+        </TouchableOpacity>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 

@@ -12,16 +12,17 @@ import {
   Alert,
   Animated,
   Platform,
-  Easing
+  Easing,
+  StyleSheet,
+  StatusBar
 } from 'react-native';
-import { Snackbar, Provider as PaperProvider } from 'react-native-paper'; // Importer Snackbar
-
+import { Snackbar, Provider as PaperProvider } from 'react-native-paper';
 import styles from './Styles';
 import splash from '../../../assets/img/splash.png';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../../context/AuthContext';
-
+import AdminTabs from '../../navigation/admin/AdminTabs';
 
 export default function LoginScreen() {
   const { t } = useTranslation();
@@ -30,10 +31,9 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-
-  const [snackbarVisible, setSnackbarVisible] = useState(false); // État pour gérer la visibilité du Snackbar
-  const [snackbarMessage, setSnackbarMessage] = useState(""); // Message du Snackbar
-  const [snackbarType, setSnackbarType] = useState("default"); 
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarType, setSnackbarType] = useState("default");
   
   // Animations
   const fadeAnim = useState(new Animated.Value(0))[0];
@@ -55,141 +55,171 @@ export default function LoginScreen() {
     ]).start();
   }, []);
 
-   // Afficher un Snackbar
-   const showSnackbar = (message, type = "default") => {
+  const showSnackbar = (message, type = "default") => {
     setSnackbarMessage(message);
     setSnackbarType(type);
     setSnackbarVisible(true);
   };
 
-
-
   const handleLogin = async () => {
-    if(email ==='' || password==='') {
-      
-      showSnackbar("Veuillez remplir tous les champs", "warning");
-      Alert.alert("Avertissement", "Veuillez remplir tous les champs");
+    if(email === '' || password === '') {
+      showSnackbar(t('Veuillez remplir tous les champs'), "warning");
       return;
     }
+    
     setIsLoading(true);
     try {
       const { token, userRole } = await login(email.toLowerCase(), password);
-      if (userRole === 'admin') {
-        showSnackbar("Connexion réussie", "success");
-        navigation.navigate('AdminHome');
+      if (userRole === 'admin' || 'superadmin') {
+        showSnackbar(t('login_success'), "success");
+        navigation.navigate(AdminStack,'Home');
       } else if (userRole === 'client') {
-        showSnackbar("Connexion réussie", "success");
-        navigation.navigate('ClientHome');
+        showSnackbar(t('login_success'), "success");
+        navigation.navigate('ClientTabs', 'home');
       }
     } catch (error) {
-      showSnackbar("Email ou mot de passe incorrect", "error");
-      Alert.alert("Erreur", "Email ou mot de passe incorrect");
+      showSnackbar(t('Mot de passe ou email incorrect'), "error");
       setPassword('');
-    }finally{
+    } finally {
       setIsLoading(false);
     }
   };
 
   return (
     <PaperProvider>
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <View style={styles.container}>
-        <Animated.View 
-          style={[
-            styles.container1,
-            { 
-              transform: [{ translateY: slideAnim }], 
-              opacity: fadeAnim 
-            }
-          ]}
-        >
-          <Image source={splash} style={styles.image} />
-        </Animated.View>
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+        style={styles.container}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : -500}
+      >
+        {/* Snackbar positionné en haut */}
+        <View style={customStyles.snackbarContainer}>
+          <Snackbar
+            visible={snackbarVisible}
+            onDismiss={() => setSnackbarVisible(false)}
+            duration={3000}
+            style={[
+              customStyles.snackbar,
+              snackbarType === "success" && customStyles.successSnackbar,
+              snackbarType === "error" && customStyles.errorSnackbar,
+              snackbarType === "warning" && customStyles.warningSnackbar,
+            ]}
+            wrapperStyle={customStyles.snackbarWrapper}
+          >
+            <Text style={customStyles.snackbarText}>{snackbarMessage}</Text>
+          </Snackbar>
+        </View>
 
-        <Animated.View 
-          style={[styles.container2, { opacity: fadeAnim }]}
-        >
-          <View style={styles.form}>
-            <Text style={styles.title}>{t('login')}</Text>
-
-            <Text style={styles.label}>{t('email')}</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Email@gmail.com"
-              placeholderTextColor="#999"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              value={email}
-              onChangeText={setEmail}
-            />
-
-            <Text style={styles.label}>{t('password')}</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Mot de passe"
-              placeholderTextColor="#999"
-              secureTextEntry
-              value={password}
-              onChangeText={setPassword}
-            />
-
-            <View style={styles.buttonContainer}>
-              <TouchableOpacity 
-                style={styles.activeButton} 
-                onPress={handleLogin}
-                activeOpacity={0.9}
-                desabled={isLoading}
-                
-              >
-                {isLoading ? ( 
-                   
-                  <ActivityIndicator color="#FFFFFF" /> 
-                ) : ( 
-                  <Text style={styles.activeText}>{t('login')}</Text>
-                )}
-                
-              </TouchableOpacity>
-
-              <TouchableOpacity 
-                onPress={() => navigation.navigate('signin')}
-                activeOpacity={0.6}
-              >
-                <Text style={styles.secondaryText}>{t('signin')}</Text>
-              </TouchableOpacity>
-            </View>
-
-            <TouchableOpacity 
-              onPress={() => navigation.navigate('check-email')}
-              activeOpacity={0.6}
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View style={styles.container}>
+            <Animated.View 
+              style={[
+                styles.container1,
+                { 
+                  transform: [{ translateY: slideAnim }], 
+                  opacity: fadeAnim 
+                }
+              ]}
             >
-              <Text style={styles.linkText}>{t('forgot password')} ?</Text>
-            </TouchableOpacity>
-          </View>
-        </Animated.View>
-      </View>
-    </TouchableWithoutFeedback>
-     </KeyboardAvoidingView>
+              <Image source={splash} style={styles.image} />
+            </Animated.View>
 
-       <Snackbar
-               visible={snackbarVisible}
-               onDismiss={() => setSnackbarVisible(false)}
-               duration={3000} // Durée d'affichage du Snackbar
-               style={{
-                 backgroundColor:
-                   snackbarType === "success"
-                     ? "#4CAF50" // Vert pour le succès
-                     : snackbarType === "error"
-                     ? "#F44336" // Rouge pour les erreurs
-                     : snackbarType === "warning"
-                     ? "#FFC107" // Jaune pour les avertissements
-                     : "#333", // Couleur par défaut
-               }}
-               
-             >
-{snackbarMessage}
-             </Snackbar>
-        
-     </PaperProvider>
+            <Animated.View style={[styles.container2, { opacity: fadeAnim }]}>
+              <View style={styles.form}>
+                <Text style={styles.title}>{t('login')}</Text>
+
+                <Text style={styles.label}>{t('email')}</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder={t('joe@example.com')}
+                  placeholderTextColor="#999"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  value={email}
+                  onChangeText={setEmail}
+                  importantForAutofill="yes"
+                  autoComplete="email"
+                  textContentType="emailAddress"
+                />
+
+                <Text style={styles.label}>{t('password')}</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder={t('password')}
+                  placeholderTextColor="#999"
+                  secureTextEntry
+                  value={password}
+                  onChangeText={setPassword}
+                  importantForAutofill="yes"
+                  autoComplete="password"
+                  textContentType="password"
+                />
+
+                <View style={styles.buttonContainer}>
+                  <TouchableOpacity 
+                    style={styles.activeButton} 
+                    onPress={handleLogin}
+                    activeOpacity={0.9}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <ActivityIndicator color="#FFFFFF" />
+                    ) : (
+                      <Text style={styles.activeText}>{t('login')}</Text>
+                    )}
+                  </TouchableOpacity>
+
+                  <TouchableOpacity 
+                    onPress={() => navigation.navigate('signin')}
+                    activeOpacity={0.6}
+                  >
+                    <Text style={styles.secondaryText}>{t('signin')}</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <TouchableOpacity 
+                  onPress={() => navigation.navigate('check-email')}
+                  activeOpacity={0.6}
+                >
+                  <Text style={styles.linkText}>{t('forgot password')} ?</Text>
+                </TouchableOpacity>
+              </View>
+            </Animated.View>
+          </View>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
+    </PaperProvider>
   );
 }
+
+const customStyles = StyleSheet.create({
+  snackbarContainer: {
+    position: 'absolute',
+    top: Platform.OS === 'android' ? StatusBar.currentHeight : 44,
+    left: 0,
+    right: 0,
+    zIndex: 999,
+  },
+  snackbarWrapper: {
+    top: 0,
+    bottom: 'auto',
+  },
+  snackbar: {
+    backgroundColor: '#333',
+    marginHorizontal: 16,
+    borderRadius: 8,
+  },
+  successSnackbar: {
+    backgroundColor: '#4CAF50',
+  },
+  errorSnackbar: {
+    backgroundColor: '#F44336',
+  },
+  warningSnackbar: {
+    backgroundColor: '#F44336',
+  },
+  snackbarText: {
+    color: '#FFFFFF',
+    textAlign: 'center',
+  },
+});

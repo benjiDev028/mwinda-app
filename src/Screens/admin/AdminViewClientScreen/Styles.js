@@ -1,122 +1,71 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet ,Platform} from "react-native";
+
+
 
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: '#FFFFFF',
+  },
+  headerContainer: {
     padding: 20,
+    paddingBottom: 10,
   },
   header: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#2C3E50',
-    marginBottom: 25,
-    textAlign: 'center',
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333333',
   },
-  filterContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 5,
-    elevation: 2,
-  },
-  filterButton: {
-    flex: 1,
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  activeFilter: {
-    backgroundColor: '#FEC107',
-  },
-  filterText: {
-    color: '#000',
-    fontWeight: '500',
-  },
-  activeFilterText: {
-    color: '#000',
+  subHeader: {
+    fontSize: 14,
+    color: '#666666',
+    marginTop: 5,
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    backgroundColor: '#F5F5F5',
+    borderRadius: 25,
     paddingHorizontal: 15,
-    marginBottom: 20,
-    elevation: 2,
+    margin: 20,
+    marginBottom: 10,
   },
   searchIcon: {
     marginRight: 10,
   },
   searchInput: {
     flex: 1,
-    height: 50,
-    color: '#333',
+    height: 45,
     fontSize: 16,
+    color: '#333333',
   },
-  userItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 12,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  favoriteItem: {
-    borderLeftWidth: 4,
-    borderLeftColor: '#FFD700',
-  },
-  bonusItem: {
-    borderLeftWidth: 4,
-    borderLeftColor: '#4CAF50',
-  },
-  userInfo: {
-    flex: 1,
-  },
-  userName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#2C3E50',
-    marginBottom: 5,
-  },
-  userEmail: {
-    fontSize: 14,
-    color: '#666',
-  },
-  favoriteIcon: {
-    marginLeft: 15,
-  },
-  bonusBadge: {
-    position: 'absolute',
-    top: -1,
-    left: -1,
-    backgroundColor: '#4CAF50',
-    borderRadius: 12,
+  filterToggle: {
     padding: 5,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 1,
   },
-  actionsContainer: {
+  filterContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
-    height: '80%',
-    marginVertical: 10,
-  },
-  actionButton: {
+    flexWrap: 'wrap',
     justifyContent: 'center',
-    alignItems: 'center',
-    width: 60,
-    height: '100%',
-    marginHorizontal: 5,
-    borderRadius: 8,
+    paddingHorizontal: 15,
+    marginBottom: 15,
+  },
+  filterButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 15,
+    backgroundColor: '#EEEEEE',
+    margin: 5,
+  },
+  activeFilter: {
+    backgroundColor: '#FEC109',
+  },
+  filterText: {
+    fontSize: 14,
+    color: '#666666',
+  },
+  activeFilterText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
   },
   loadingContainer: {
     flex: 1,
@@ -125,17 +74,176 @@ export const styles = StyleSheet.create({
   },
   loadingText: {
     marginTop: 15,
-    color: '#666',
+    fontSize: 16,
+    color: '#666666',
+  },
+  listHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: '#FAFAFA',
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEEEEE',
+  },
+  headerColumn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  headerText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#333333',
+  },
+  listContent: {
+    paddingBottom: 20,
+  },
+  userItem: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    padding: 15,
+    marginHorizontal: 20,
+    marginVertical: 5,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
+  },
+  favoriteItem: {
+    borderLeftWidth: 4,
+    borderLeftColor: '#FFD700',
+  },
+  bonusItem: {
+    borderRightWidth: 4,
+    borderRightColor: '#4CAF50',
+  },
+  userInfo: {
+    flex: 1,
+  },
+  userName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333333',
+    marginBottom: 5,
+  },
+  userEmail: {
+    fontSize: 14,
+    color: '#666666',
+    marginBottom: 5,
+  },
+  pointsContainer: {
+    flexDirection: 'row',
+  },
+  pointsText: {
+    fontSize: 12,
+    color: '#666666',
+    marginRight: 15,
+  },
+  roleIcon: {
+    marginLeft: 5,
+  },
+  bonusBadge: {
+    backgroundColor: '#4CAF50',
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 10,
+  },
+  actionsContainer: {
+    flexDirection: 'row',
+    width: 160,
+  },
+  rightActionsContainer: {
+    flexDirection: 'row',
+    width: 180,
+  },
+  actionButton: {
+    width: 80,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  viewButton: {
+    backgroundColor: '#2196F3',
+  },
+  editButton: {
+    backgroundColor: '#4CAF50',
+  },
+  favoriteButton: {
+    backgroundColor: '#FFC107',
+  },
+  deleteButton: {
+    backgroundColor: '#F44336',
+  },
+  actionButtonText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    marginTop: 5,
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 50,
+    paddingVertical: 40,
   },
   emptyText: {
-    marginTop: 15,
-    color: '#888',
     fontSize: 16,
+    color: '#9E9E9E',
+    marginTop: 15,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    padding: 20,
+    width: '80%',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333333',
+    marginBottom: 10,
+  },
+  modalText: {
+    fontSize: 16,
+    color: '#666666',
+    marginBottom: 20,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
+  modalButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 5,
+    marginLeft: 10,
+  },
+  cancelButton: {
+    backgroundColor: '#E0E0E0',
+  },
+  deleteButton: {
+    backgroundColor: '#F44336',
+  },
+  modalButtonText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
   },
 });

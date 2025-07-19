@@ -5,7 +5,7 @@ import ClientTabs from "./client/ClientTabs";
 import LoginScreen from "../Screens/LoginScreen/LoginScreen";
 import { useNavigation } from '@react-navigation/native';
 import SignIn from '../Screens/SigninScreen/SigninScreen';
-import { createStackNavigator } from "@react-navigation/stack"; // Utiliser Stack pour une navigation indépendante
+import { createStackNavigator } from "@react-navigation/stack";
 import CheckEmailScreen from '../Screens/PasswordReset/checkEmailScreen/CheckEmailScreen';
 import VerificationScreen from '../Screens/PasswordReset/VerificationScreen/VerificationScreen';
 import NewPasswordScreen from '../Screens/PasswordReset/NewPasswordScreen/NewPasswordScreen';
@@ -18,60 +18,44 @@ export default function MainNavigator() {
     const { userRole, authToken } = useContext(AuthContext);
     const navigation = useNavigation();
 
-    // Si l'utilisateur n'est pas connecté, on le redirige vers la page de connexion
+    // Redirection basée sur l'état d'authentification
     useEffect(() => {
         if (navigation.isReady()) {
-            if (authToken === null) {
+            if (!authToken) {
                 navigation.navigate('Login');
+            } else if (userRole === 'admin' || userRole === 'superadmin') {
+                navigation.navigate('AdminRoot');
+            } else if (userRole === 'client') {
+                navigation.navigate('Client');
             }
         }
-    }, [authToken, navigation]);
+    }, [authToken, userRole, navigation]);
 
     return (
-        <Stack.Navigator>
-      {userRole === 'admin' ? (
-        <Stack.Screen 
-          name="AdminRoot" 
-          component={AdminStack} // Utilisez le Stack Admin complet
-          options={{ headerShown: false }}
-        />
-
-                    
-            ) : userRole === 'client' ? (
-                <Stack.Screen name="Client"  options={{
-                    headerShown: false, }} component={ClientTabs} />
-            ) : 
-            
-            (
-                
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+            {/* Écrans accessibles uniquement aux non-connectés */}
+            {!authToken ? (
                 <>
+                    <Stack.Screen name="Login" component={LoginScreen} />
+                    <Stack.Screen name="signin" component={SignIn} />
+                    <Stack.Screen name="check-email" component={CheckEmailScreen} />
+                    <Stack.Screen name="verification" component={VerificationScreen} />
+                    <Stack.Screen name="newpassword-screen" component={NewPasswordScreen} />
+                </>
+            ) : (
+                <>
+                    {/* Écrans protégés par authentification */}
+                    {(userRole === 'admin' || userRole === 'superadmin') && (
+                        <Stack.Screen name="AdminRoot" component={AdminStack} />
+                    )}
                     
-                    <Stack.Screen name="Login"  options={{
-                    headerShown: false, }}component={LoginScreen} />
+                    {userRole === 'client' && (
+                        <Stack.Screen name="Client" component={ClientTabs} />
+                    )}
 
-                  
-                    <Stack.Screen name="signin" options={{
-                    headerShown: false, }}  component={SignIn} />
-
-                    <Stack.Screen name="check-email" options={{
-                    headerShown: false, }}  component={CheckEmailScreen} />
-
-                    <Stack.Screen name="verification" options={{
-                    headerShown: false, }}  component={VerificationScreen} />
-
-                    <Stack.Screen name="newpassword-screen" options={{
-                    headerShown: false, }}  component={NewPasswordScreen} />
-
-            
-
-                    <Stack.Screen name="EditUser" options={{
-                    headerShown: false, }}  component={EditUserScreen} /> 
-
-                    
-                    
-                    
-
-                  
+                    {/* Écrans communs aux utilisateurs connectés */}
+                    <Stack.Screen name="UserDetails" component={UserDetailsScreen} />
+                    <Stack.Screen name="EditUser" component={EditUserScreen} />
                 </>
             )}
         </Stack.Navigator>
