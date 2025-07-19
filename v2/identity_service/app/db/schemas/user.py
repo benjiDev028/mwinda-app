@@ -50,8 +50,11 @@ class UserResponseFind(UserBase):
     pointstudios: int 
     
 
-class UserCreate(UserBase):
-
+class UserCreate(BaseModel):
+    first_name: str
+    last_name: str
+    email: str
+    date_birth: str
     password: str
 class UserFindById(BaseModel):
     id: UUID

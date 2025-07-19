@@ -6,6 +6,7 @@ from app.db.session import connect_to_db, close_db_connection
 from app.db.base import Base
 from app.db.session import engine
 import os
+from app.core.init_superadmin import create_superadmin
 
 import time
 from sqlalchemy import create_engine
@@ -24,6 +25,11 @@ engine = create_engine(DATABASE_URL)
 # Fonction pour exécuter un script SQL
 # Fonction pour exécuter un script SQL
 from sqlalchemy import text
+
+@app.on_event("startup")
+async def startup_event():
+    await create_superadmin()
+
 
 def execute_sql_script(script_path):
     with open(script_path, "r") as file:

@@ -32,15 +32,12 @@ def get_password_hash(password: str) -> (str, str):
     return hashed_password, salt
 
 def create_access_token(data: dict, expires_delta: timedelta = None) -> str:
-    """
-    Crée un token JWT avec une date d'expiration.
-    """
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
     else:
         expire = datetime.utcnow() + timedelta(minutes=15)
-    to_encode.update({"exp": expire})
+    to_encode.update({"exp": expire, "type": "access"})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
