@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Points ajoutés</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f6f9fc;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 30px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 31, 63, 0.1);
+        }
+        h1 {
+            color: #001F3F;
+        }
+        p {
+            font-size: 16px;
+            color: #4a5568;
+            line-height: 1.6;
+        }
+        .footer {
+            margin-top: 40px;
+            font-size: 14px;
+            color: #999999;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Bonjour {{firstname}} {{lastname}},</h1>
+        <p>
+            Félicitations ! 🎉<br><br>
+            Vous venez de gagner <strong>{{points_added}} points</strong> de fidélité chez <strong>Mwinda Photographie</strong>
+            grâce à votre interaction avec notre service <strong>{{reference}}</strong>.
+        </p>
+
+        <p>
+            Ces points s’ajoutent à votre solde actuel et pourront être utilisés pour bénéficier de services gratuits ou d’avantages exclusifs.
+        </p>
+
+        <p>
+            Merci pour votre confiance,<br>
+            L’équipe de Mwinda Technologies
+        </p>
+
+        <div class="footer">
+            Mwinda Technologies – Illuminer l’avenir par l’innovation
+        </div>
+    </div>
+</body>
+</html>

@@ -18,7 +18,7 @@ class EmailService:
             # Créer le message MIME
             msg = MIMEText(body, 'html')  # Utilisez 'plain' pour du texte brut
             msg['Subject'] = subject
-            msg['From'] = formataddr(('Notification Service', SMTPConfig.SMTP_USER))
+            msg['From'] = formataddr(('Mwinda Photographie', SMTPConfig.SMTP_USER))
             msg['To'] = to_email
 
             # Envoyer l'e-mail via SMTP

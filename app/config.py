@@ -10,7 +10,10 @@ class RabbitMQConfig:
         'welcome': 'welcome_queue',
         'verification': 'reset_password_queue',
         'success': 'success_queue',
-        'activate_compte':'activate_compte_queue'
+        'activate_compte':'activate_compte_queue',
+        'update_password':'update_password_queue',
+        'earn_point':'earn_point_queue',
+        'add_point':'add_point_queue'
     }
 
 class SMTPConfig:

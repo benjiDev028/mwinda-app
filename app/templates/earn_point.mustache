@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Confirmation d'échange de points</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f6f9fc;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 30px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 31, 63, 0.1);
+        }
+        h1 {
+            color: #001F3F;
+        }
+        p {
+            font-size: 16px;
+            color: #4a5568;
+            line-height: 1.6;
+        }
+        .footer {
+            margin-top: 40px;
+            font-size: 14px;
+            color: #999999;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Bonjour {{firstname}} {{lastname}},</h1>
+        <p>
+            Nous vous confirmons que vous avez utilisé <strong>{{points_used}} points</strong>
+            pour obtenir un service gratuit chez <strong>Mwinda Photographie</strong> (référence : <strong>{{reference}}</strong>).
+        </p>
+
+        <p>
+            Merci pour votre fidélité.<br>
+            Nous espérons que vous avez apprécié ce service gratuit.
+        </p>
+
+        <p>
+            Si vous avez des questions ou besoin d’aide, n’hésitez pas à nous contacter.
+        </p>
+
+        <div class="footer">
+            Mwinda Technologies – Illuminer l’avenir par l’innovation
+        </div>
+    </div>
+</body>
+</html>
