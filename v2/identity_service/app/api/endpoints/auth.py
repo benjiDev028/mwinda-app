@@ -5,14 +5,16 @@ from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from pydantic import EmailStr
 from asyncpg import Connection
-from app.db.session import connect_to_db, close_db_connection
+
 from app.services.auth_service import login_user
 from app.services.user_service import generate_barcode, get_user_by_email, get_user
 from app.db.schemas.auth import UserLogin, RefreshToken
 from app.core.security import create_access_token, create_refresh_token
 import asyncpg
 import os
+from app.db.session import get_db
 import logging
+from sqlalchemy.ext.asyncio import AsyncSession
 
 # Configuration des logs
 logging.basicConfig(level=logging.INFO)
@@ -23,18 +25,11 @@ SECRET_KEY = os.getenv("JWT_SECRET_KEY")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
-# Dépendance pour obtenir la session de base de données
-async def get_db():
-    db = await connect_to_db()
-    try:
-        yield db
-    finally:
-        await close_db_connection(db)
 
 router = APIRouter(prefix="/identity", tags=["Login"])
 
 @router.post("/login", status_code=status.HTTP_200_OK)
-async def login_endpoint(user: UserLogin, db: asyncpg.Connection = Depends(get_db)):
+async def login_endpoint(user: UserLogin, db: AsyncSession = Depends(get_db)):
     """
     Connecter un utilisateur existant.
     """
@@ -74,7 +69,7 @@ async def login_endpoint(user: UserLogin, db: asyncpg.Connection = Depends(get_d
         )
 
 @router.post("/refresh-token", status_code=status.HTTP_200_OK)
-async def refresh_access_token(refresh_token: RefreshToken, db: asyncpg.Connection = Depends(get_db)):
+async def refresh_access_token(refresh_token: RefreshToken, db: AsyncSession = Depends(get_db)):
     """
     Renouvelle l'access token en utilisant un refresh token valide.
     """

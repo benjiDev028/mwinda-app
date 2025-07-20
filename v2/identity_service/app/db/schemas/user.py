@@ -16,6 +16,9 @@ class UserBase(BaseModel):
     email: EmailStr
     date_birth: str
 
+    class Config:
+        from_attributes = True 
+
 class UserFindByName(BaseModel):
     first_name: str
     last_name: str
@@ -32,11 +35,17 @@ class UserUpdate(BaseModel) :
     email :EmailStr
     date_birth :str
 
+    class Config:
+        from_attributes = True 
+
 class User(BaseModel):
     first_name: str
     last_name: str
     email: str
     date_birth: str
+
+    class Config:
+        from_attributes = True 
 
 class UserResponseFind(UserBase):
     id: UUID
@@ -48,6 +57,9 @@ class UserResponseFind(UserBase):
     role: str
     pointevents: int 
     pointstudios: int 
+
+    class Config:
+        from_attributes = True 
     
 
 class UserCreate(BaseModel):
@@ -56,8 +68,14 @@ class UserCreate(BaseModel):
     email: str
     date_birth: str
     password: str
+
+    class Config:
+        from_attributes = True 
 class UserFindById(BaseModel):
     id: UUID
+
+    class Config:
+        from_attributes = True 
 
 class UserResponse(UserBase):
     id: UUID
@@ -69,6 +87,12 @@ class UserResponse(UserBase):
     is_email_verified: bool = False
     pointevents: int 
     pointstudios: int 
+    barcode: str = None
+    
+    class Config:
+        from_attributes = True
+        
+        orm_mode = True  # Utilisé pour remplacer 'orm_mode' dans Pydantic v2
 
 
 

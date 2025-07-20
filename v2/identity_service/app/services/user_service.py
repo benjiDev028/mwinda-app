@@ -14,10 +14,16 @@ from app.db.schemas.user import UserCreate, UserResponse, UserResponseFind,UserU
 from app.db.schemas.password import ResetPasswordRequest, UpdatePasswordRequest
 from asyncpg import Connection
 import uuid
+from app.db.models.user import User
 import os
 import barcode
 from barcode.writer import ImageWriter
 import json
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.db.models.user import User
+from sqlalchemy import select
+import traceback
+from sqlalchemy.orm import selectinload
 import logging
 
 # Configuration du logger
@@ -27,9 +33,10 @@ RABBITMQ_URL = "amqp://guest:guest@localhost:5672"# Configurez l'URL de RabbitMQ
 ACTIVATE_COMPTE_QUEUE = "activate_compte_queue"# Nom de la file d'attente RabbitMQ
 UPDATE_PASSWORD_QUEUE="update_password_queue"
 
-async def register_user(db: asyncpg.Connection, user: UserCreate) -> UserResponse:
+async def register_user(db: AsyncSession, user: UserCreate) -> UserResponse:
     try:
-        existing_user = await db.fetchrow("SELECT id FROM users WHERE email = $1", user.email)
+        result = await db.execute(select(User).where(User.email == user.email))
+        existing_user = result.scalar_one_or_none()
         if existing_user:
             raise HTTPException(
                 status_code=400,
@@ -38,36 +45,25 @@ async def register_user(db: asyncpg.Connection, user: UserCreate) -> UserRespons
                     "message": "The provided email is already registered. Please use a different email."
                 }
             )
-        
+
         hashed_password, salt_password = get_password_hash(user.password)
         
-        query = """
-        INSERT INTO users (id, first_name, last_name, email, password_hash, password_salt, date_birth, is_email_verified)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-        RETURNING id, first_name, last_name, email, date_birth, is_email_verified, pointstudios, pointevents, role
-        """
-        new_user = await db.fetchrow(
-            query,
-            uuid.uuid4(),
-            user.first_name,
-            user.last_name,
-            user.email,
-            hashed_password,
-            salt_password,
-            user.date_birth,
-            False
+       
+        
+        new_user = User(
+            first_name=user.first_name,
+            last_name=user.last_name,
+            email=user.email,
+            password_hash=hashed_password,
+            password_salt=salt_password,
+            date_birth=user.date_birth,
+            is_email_verified=False,
+        
         )
-        
-        if not new_user:
-            raise HTTPException(
-                status_code=500,
-                detail={
-                    "error": "USER_CREATION_FAILED",
-                    "message": "An unexpected error occurred. The user could not be created. Please try again later."
-                }
-            )
-        
-        logging.info("User registered successfully: %s", new_user['email'])
+        db.add(new_user)
+        await db.commit()
+        await db.refresh(new_user)
+        logging.info("User registered successfully: %s", new_user.email)
         connection = await aio_pika.connect_robust(RABBITMQ_URL)
         async with connection:
             # Création d'un canal
@@ -98,94 +94,13 @@ async def register_user(db: asyncpg.Connection, user: UserCreate) -> UserRespons
             }
         )
 
-# async def register_user_admin(db: asyncpg.Connection, user: UserCreate) -> UserResponse:
-#     try:
-#         existing_user = await db.fetchrow("SELECT id FROM users WHERE email = $1", user.email)
-#         if existing_user:
-#             raise HTTPException(
-#                 status_code=400,
-#                 detail={
-#                     "error": "EMAIL_ALREADY_REGISTERED",
-#                     "message": "The provided email is already registered. Please use a different email."
-#                 }
-#             )
-        
-#         hashed_password, salt_password = get_password_hash(user.password)
-        
-#         # ✅ Ajout du champ `role` dans la requête
-#         query = """
-#         INSERT INTO users (
-#             id, first_name, last_name, email,
-#             password_hash, password_salt,
-#             date_birth, is_email_verified,
-#             role
-#         )
-#         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-#         RETURNING id, first_name, last_name, email, date_birth, is_email_verified, pointstudios, pointevents, role
-#         """
-        
-#         new_user = await db.fetchrow(
-#             query,
-#             uuid.uuid4(),
-#             user.first_name,
-#             user.last_name,
-#             user.email,
-#             hashed_password,
-#             salt_password,
-#             user.date_birth,
-#             False,
-#             "admin"  # 👈 Le rôle par défaut ici
-#         )
-        
-#         if not new_user:
-#             raise HTTPException(
-#                 status_code=500,
-#                 detail={
-#                     "error": "USER_CREATION_FAILED",
-#                     "message": "An unexpected error occurred. The user could not be created. Please try again later."
-#                 }
-#             )
-        
-#         logging.info("User registered successfully: %s", new_user['email'])
 
-#         # Envoi notification
-#         connection = await aio_pika.connect_robust(RABBITMQ_URL)
-#         async with connection:
-#             channel = await connection.channel()
-#             await channel.declare_queue(ACTIVATE_COMPTE_QUEUE, durable=True)
 
-#             message = aio_pika.Message(
-#                 body=json.dumps({
-#                     "first_name": user.first_name,
-#                     "last_name": user.last_name,
-#                     "email": user.email
-#                 }).encode(),
-#                 content_type="application/json",
-#                 delivery_mode=aio_pika.DeliveryMode.PERSISTENT
-#             )
-
-#             await channel.default_exchange.publish(message, routing_key=ACTIVATE_COMPTE_QUEUE)
-
-#         return UserResponse(**dict(new_user))
-
-#     except HTTPException as http_error:
-#         logging.error("HTTP error during user registration: %s", http_error.detail)
-#         raise
-#     except Exception as e:
-#         logging.error("Unexpected error during user registration: %s", str(e))
-#         raise HTTPException(
-#             status_code=500,
-#             detail={
-#                 "error": "INTERNAL_SERVER_ERROR",
-#                 "message": "An unexpected error occurred. Please contact support if the problem persists."
-#             }
-#         )
-
-async def register_user_admin(db: asyncpg.Connection, user: UserCreate) -> UserResponse:
-    async with db.transaction():
+async def register_user_admin(db: AsyncSession, user: UserCreate) -> UserResponse:
         try:
-            # Vérification que l'email n'existe pas déjà
-            existing_user = await db.fetchrow("SELECT id FROM users WHERE email = $1", user.email)
+            result = await db.execute(select(User).where(User.email == user.email))
+            existing_user = result.scalar_one_or_none()
+
             if existing_user:
                 raise HTTPException(
                     status_code=400,
@@ -194,62 +109,33 @@ async def register_user_admin(db: asyncpg.Connection, user: UserCreate) -> UserR
                         "message": "The provided email is already registered."
                     }
                 )
-           
-            # Hachage du mot de passe
+
             hashed_password, salt_password = get_password_hash(user.password)
-           
-            # Génération de l'ID une seule fois
-            user_id = uuid.uuid4()
-           
-            # Requête modifiée pour inclure pointevents et pointstudios
-            query = """
-            INSERT INTO users (
-                id, first_name, last_name, email,
-                password_hash, password_salt,
-                date_birth, is_email_verified,
-                role, created_at, pointevents, pointstudios
+
+            new_user = User(
+                first_name=user.first_name,
+                last_name=user.last_name,
+                email=user.email,
+                password_hash=hashed_password,
+                password_salt=salt_password,
+                date_birth=user.date_birth,
+                is_email_verified=False,
+                role="admin"
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), $10, $11)
-            RETURNING id, first_name, last_name, email, date_birth, 
-                     is_email_verified, role, created_at, pointevents, pointstudios
-            """
-           
-            new_user = await db.fetchrow(
-                query,
-                user_id,
-                user.first_name,
-                user.last_name,
-                user.email,
-                hashed_password,
-                salt_password,
-                user.date_birth,
-                False,
-                "admin",
-                0,  # pointevents par défaut
-                0   # pointstudios par défaut
-            )
-           
-            if not new_user:
-                raise HTTPException(
-                    status_code=500,
-                    detail={
-                        "error": "USER_CREATION_FAILED",
-                        "message": "User creation failed."
-                    }
-                )
-           
-            logging.info("Admin user registered successfully: %s", new_user['email'])
-            
-            # Conversion explicite en dict avant UserResponse
-            user_dict = dict(new_user)
-            return UserResponse(**user_dict)
-            
+
+            db.add(new_user)
+            await db.commit()
+            await db.refresh(new_user)
+
+            logging.info("User registered successfully: %s", new_user.email)
+
+            return new_user
+
         except HTTPException as http_error:
             logging.error("HTTP error during admin registration: %s", http_error.detail)
             raise
         except Exception as e:
             logging.error("Unexpected error during admin registration: %s", str(e))
-            logging.error("Exception type: %s", type(e).__name__)
             raise HTTPException(
                 status_code=500,
                 detail={
@@ -258,54 +144,50 @@ async def register_user_admin(db: asyncpg.Connection, user: UserCreate) -> UserR
                 }
             )
 
-async def update_user(db: asyncpg.Connection, user_id: uuid, user: UserUpdate) -> UserResponse:
+async def update_user(db: AsyncSession, user_id: uuid.UUID, user: UserUpdate) -> UserResponse:
     try:
-        # Requête SQL pour mettre à jour l'utilisateur
-        query = """
-        UPDATE users
-        SET first_name = $1, last_name = $2, email = $3, date_birth = $4
-        WHERE id = $5
-        RETURNING id, first_name, last_name, email, date_birth, is_email_verified, pointevents,pointstudios, role
-        """
-        
-        # Exécution de la requête
-        Updated_user = await db.fetchrow(
-            query,
-            user.first_name,
-            user.last_name,
-            user.email,
-            user.date_birth,
-            user_id
-        )
-        
-        if not Updated_user:
+        # Vérifie si l'utilisateur existe
+        result = await db.execute(select(User).where(User.id == user_id))
+        existing_user = result.scalar_one_or_none()
+
+        if not existing_user:
             raise HTTPException(status_code=404, detail="Utilisateur non trouvé.")
-        
-        # Retourner les données de l'utilisateur mis à jour
-        logging.info("User update successfully: %s", Updated_user['email'])
+
+        # Mise à jour des champs
+        existing_user.first_name = user.first_name
+        existing_user.last_name = user.last_name
+        existing_user.email = user.email
+        existing_user.date_birth = user.date_birth
+
+        await db.commit()
+        await db.refresh(existing_user)
+
+        logging.info("User updated successfully: %s", existing_user.email)
+
+        # Envoie un message via RabbitMQ (si nécessaire)
         connection = await aio_pika.connect_robust(RABBITMQ_URL)
         async with connection:
-            # Création d'un canal
             channel = await connection.channel()
-
-            # Déclarer la queue
             await channel.declare_queue(ACTIVATE_COMPTE_QUEUE, durable=True)
 
-            # Publier le message
             message = aio_pika.Message(
-                body=json.dumps({"first_name": user.first_name, "last_name": user.last_name,"email":user.email}).encode(),
+                body=json.dumps({
+                    "first_name": existing_user.first_name,
+                    "last_name": existing_user.last_name,
+                    "email": existing_user.email
+                }).encode(),
                 content_type="application/json",
                 delivery_mode=aio_pika.DeliveryMode.PERSISTENT,
             )
             await channel.default_exchange.publish(message, routing_key=ACTIVATE_COMPTE_QUEUE)
-        return UserResponse(**Updated_user)
-        
+
+        return existing_user
 
     except HTTPException as http_error:
-        logging.error("HTTP error during user registration: %s", http_error.detail)
+        logging.error("HTTP error during user update: %s", http_error.detail)
         raise
     except Exception as e:
-        logging.error("Unexpected error during user registration: %s", str(e))
+        logging.error("Unexpected error during user update: %s", str(e))
         raise HTTPException(
             status_code=500,
             detail={
@@ -314,208 +196,190 @@ async def update_user(db: asyncpg.Connection, user_id: uuid, user: UserUpdate) -
             }
         )
     
-    
-    except HTTPException as e:
-        raise e
-    except Exception as e:
-        logging.error(f"Erreur lors de la mise à jour de l'utilisateur avec l'ID {user_id}: {e}")
-        raise HTTPException(status_code=500, detail="Erreur serveur.")
-
-async def activate_user_email(db: asyncpg.Connection, email: str):
+async def activate_user_email(db: AsyncSession, email: str):
     try:
-        query = "UPDATE users SET is_email_verified = TRUE WHERE email = $1"
-        await db.execute(query, email)
+        result = await db.execute(select(User).where(User.email == email))
+        user = result.scalar_one_or_none()
+
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found.")
+
+        user.is_email_verified = True
+        await db.commit()
+        await db.refresh(user)
+
         logging.info("Email activated successfully for: %s", email)
+
         return {"message": "Email verified"}
+
     except Exception as e:
         logging.error("Error activating email: %s", str(e))
-        raise RuntimeError(f"Error activating email: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error.")
 
-async def get_user(db: asyncpg.Connection, user_id: uuid):
+async def get_user(db: AsyncSession, user_id: uuid.UUID) -> UserResponse:
     try:
-        query = "SELECT id, first_name, last_name, email, date_birth, role, is_email_verified, barcode,created_at,pointevents,pointstudios FROM users WHERE id = $1"
-        user = await db.fetchrow(query, user_id)
+        result = await db.execute(select(User).where(User.id == user_id))
+        user = result.scalar_one_or_none()
+
         if not user:
             logging.warning("Utilisateur non trouvé avec l'ID : %s", user_id)
+            raise HTTPException(status_code=404, detail="Utilisateur non trouvé.")
+
         return user
+
+    except HTTPException:
+        raise
     except Exception as e:
         logging.error("Erreur lors de la récupération de l'utilisateur par ID : %s", str(e))
-        raise RuntimeError(f"Erreur lors de la récupération de l'utilisateur : {e}")
-async def get_userv1_by_email(db: asyncpg.Connection, email: str):
+        raise HTTPException(status_code=500, detail="Erreur serveur.")
+
+
+async def get_userv1_by_email(db: AsyncSession, email: str) -> UserResponse:
     try:
-        query = "SELECT * FROM users WHERE email = $1"
-        user = await db.fetchrow(query, email)
+        result = await db.execute(select(User).where(User.email == email))
+        user = result.scalar_one_or_none()
+
         if not user:
             logging.warning("User not found with email: %s", email)
+            raise HTTPException(status_code=404, detail="Utilisateur non trouvé.")
+
         return user
+
     except Exception as e:
         logging.error("Error fetching user by email: %s", str(e))
-        raise RuntimeError(f"Error fetching user: {e}")
+        raise HTTPException(status_code=500, detail="Erreur serveur")
 
-async def get_user_by_email(db: asyncpg.Connection, email: str):
+async def get_user_by_email(db: AsyncSession, email: str) -> UserResponse:
     try:
-        query = "SELECT id, first_name, last_name, email, date_birth, is_email_verified,barcode, pointevents,pointstudios FROM users WHERE email = $1"
-        user = await db.fetchrow(query, email)
+        result = await db.execute(select(User).where(User.email == email))
+        user = result.scalar_one_or_none()
+
         if not user:
             logging.warning("User not found with email: %s", email)
+            raise HTTPException(status_code=404, detail="Utilisateur non trouvé.")
+
         return user
+
+    except HTTPException:
+        raise
     except Exception as e:
         logging.error("Error fetching user by email: %s", str(e))
-        raise RuntimeError(f"Error fetching user: {e}")
+        raise HTTPException(status_code=500, detail="Erreur serveur")
 
-
-async def delete_user_by_id(db: asyncpg.Connection, user_id: uuid):
+async def delete_user_by_id(db: AsyncSession, user_id: uuid.UUID) -> bool:
     try:
-         # Acquisition sécurisée de la connexion
-        user_exists = await db.fetchval("SELECT COUNT(*) FROM users WHERE id = $1", user_id)
-            
-        if not user_exists:
+        result = await db.execute(select(User).where(User.id == user_id))
+        user = result.scalar_one_or_none()
+
+        if not user:
             logging.warning("Utilisateur non trouvé avec l'ID : %s", user_id)
-            return False
+            raise HTTPException(status_code=404, detail="Utilisateur non trouvé.")
 
-        await db.execute("DELETE FROM users WHERE id = $1", user_id)
-        logging.info("Utilisateur supprimé avec succès avec l'ID : %s", user_id)     
+        await db.delete(user)
+        await db.commit()
+
+        logging.info("Utilisateur supprimé avec succès avec l'ID : %s", user_id)
         return True
+
+    except HTTPException:
+        raise
     except Exception as e:
-        logging.error("Erreur lors de la suppression de l'utilisateur par ID : %s", str(e))
-        raise RuntimeError(f"Erreur lors de la suppression de l'utilisateur : {e}")
+        logging.error("Erreur lors de la suppression de l'utilisateur : %s", str(e))
+        raise HTTPException(status_code=500, detail="Erreur serveur")
     
-    
-async def get_users_by_birthday(db: asyncpg.Connection, date_birth: str) -> List[UserResponse]:
+async def get_users(db: AsyncSession) -> List[UserResponseFind]:
     try:
-        query = """
-        SELECT id, first_name, last_name, email, date_birth, is_email_verified, pointevents,pointstudios
-        FROM users
-        WHERE date_birth = $1
-        """
-        users = await db.fetch(query, date_birth)
-        
+        result = await db.execute(select(User).order_by(User.first_name.asc()))
+        users = result.scalars().all()
+
         if not users:
-            logging.info("No users found with birthday: %s", date_birth)
+            logging.info("Aucun utilisateur trouvé.")
             return []
 
         return [
-            UserResponseFind(**{
-                **dict(user),
-                "is_email_verified": user.get("is_email_verified", False)
-            })
-            for user in users
+            user for user in users
         ]
+
     except Exception as e:
-        logging.error("Error fetching users by birthday: %s", str(e))
-        raise RuntimeError(f"Error fetching users: {e}")
+        logging.error("Erreur lors de la récupération des utilisateurs : %s", str(e))
+        raise HTTPException(status_code=500, detail="Erreur lors de la récupération des utilisateurs.")
 
-async def get_users(db: asyncpg.Connection) -> List:
+async def update_user_password(db: AsyncSession, user_id: uuid.UUID, new_password: str, salt: str) -> dict:
     try:
-        query = """
-        SELECT id, first_name, last_name, email, date_birth, is_email_verified,role, pointevents,pointstudios,barcode
-        FROM users
-        ORDER BY first_name ASC
-        """
-        users = await db.fetch(query)
-        
-        if not users:
-            logging.info("No users found in the database.")
-            return []
+        result = await db.execute(select(User).where(User.id == user_id))
+        user = result.scalar_one_or_none()
 
-        return [
-            UserResponseFind(**{
-                **dict(user),
-                "is_email_verified": user.get("is_email_verified", False),
-                "code barre":user.get("barcode")
-            })
-            for user in users
-        ]
-    except Exception as e:
-        logging.error("Error fetching all users: %s", str(e))
-        raise RuntimeError(f"Error fetching users: {e}")
-
-async def get_by_username(db: asyncpg.Connection, first_name: str, last_name: str) -> List[UserResponse]:
-    try:
-        query = """
-        SELECT id, first_name, last_name, email, date_birth,role, is_email_verified, pointevents,pointstudios
-        FROM users
-        WHERE first_name ILIKE '%' || $1 || '%' OR last_name ILIKE '%' || $2 || '%'
-        """
-        users = await db.fetch(query, first_name, last_name)
-        
-        if not users:
-            logging.info("No users found with name: %s %s", first_name, last_name)
-            return []
-
-        return [
-            UserResponseFind(**{
-                **dict(user),
-                "is_email_verified": user.get("is_email_verified", False)
-            })
-            for user in users
-        ]
-    except Exception as e:
-        logging.error("Error fetching users by name: %s", str(e))
-        raise RuntimeError(f"Error fetching users: {e}")
-
-async def update_user_password(db: asyncpg.Connection, user_id: str, new_password: str, salt: str):
-    try:
-        query = """
-        UPDATE users
-        SET password_hash = $1,
-            password_salt = $2
-        WHERE id = $3
-        RETURNING id, pointevents,pointstudios
-        """
-        user = await db.fetchrow(query, new_password, salt, user_id)
-        
         if not user:
-            logging.warning("Password update failed for user ID: %s", user_id)
-            raise RuntimeError("Password update failed.")
-        
-        user_response = {
-            'id': str(user['id']),
-            'pointevents': user['pointevents'],
-            'pointstudios': user['pointstudios']
-        }
-        
-                  
-        return user_response
-    except Exception as e:
-        logging.error("Error updating password for user ID %s: %s", user_id, str(e))
-        raise RuntimeError(f"Error updating password: {e}")
+            logging.warning("Utilisateur non trouvé avec l'ID : %s", user_id)
+            raise HTTPException(status_code=404, detail="Utilisateur non trouvé.")
 
-async def reset_password_request(db: asyncpg.Connection, user: UpdatePasswordRequest):
+        user.password_hash = new_password
+        user.password_salt = salt
+
+        await db.commit()
+        await db.refresh(user)
+
+        logging.info("Mot de passe mis à jour avec succès pour l'ID : %s", user_id)
+
+        return {
+            "id": str(user.id),
+            "pointevents": user.pointevents,
+            "pointstudios": user.pointstudios
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error("Erreur lors de la mise à jour du mot de passe : %s", str(e))
+        raise HTTPException(status_code=500, detail="Erreur serveur")
+    
+async def reset_password_request(db: AsyncSession, user: UpdatePasswordRequest):
     try:
-        user_record = await db.fetchrow("SELECT * FROM users WHERE email = $1", user.email)
-        if not user_record:
+        result = await db.execute(select(User).where(User.email == user.email))
+        user_obj = result.scalar_one_or_none()
+
+        if not user_obj:
             logging.warning("User not found for password reset: %s", user.email)
             raise HTTPException(status_code=404, detail="User not found")
-        
+
+        # Hash du mot de passe
         hashed_password, salt_password = get_password_hash(user.new_password)
-        logging.info("Password updated successfully for user ID: %s", user_record["id"])
+
+        # Envoi du message RabbitMQ
         connection = await aio_pika.connect_robust(RABBITMQ_URL)
         async with connection:
-            # Création d'un canal
             channel = await connection.channel()
-
-            # Déclarer la queue
             await channel.declare_queue(UPDATE_PASSWORD_QUEUE, durable=True)
 
-            # Publier le message
             message = aio_pika.Message(
-                body=json.dumps({"first_name": user_record["first_name"], "last_name": user_record["last_name"],"email":user.email}).encode(),
+                body=json.dumps({
+                    "first_name": user_obj.first_name,
+                    "last_name": user_obj.last_name,
+                    "email": user_obj.email
+                }).encode(),
                 content_type="application/json",
                 delivery_mode=aio_pika.DeliveryMode.PERSISTENT,
             )
-            await channel.default_exchange.publish(message, routing_key=UPDATE_PASSWORD_QUEUE)      
-        return await update_user_password(db, user_id=user_record["id"], new_password=hashed_password, salt=salt_password)
+            await channel.default_exchange.publish(message, routing_key=UPDATE_PASSWORD_QUEUE)
+
+        # Mise à jour du mot de passe
+        return await update_user_password(
+            db=db,
+            user_id=user_obj.id,
+            new_password=hashed_password,
+            salt=salt_password
+        )
+
     except HTTPException as http_error:
         logging.error("HTTP error during password reset request: %s", http_error.detail)
         raise
     except Exception as e:
         logging.error("Unexpected error during password reset request: %s", str(e))
-        raise RuntimeError(f"Error during password reset request: {e}")
-
+        raise HTTPException(status_code=500, detail="Erreur serveur.")
+    
 async def generate_barcode(user):
     try:
-        reference_number = f"{user['barcode']}"
+        reference_number = f"{user.barcode}"
         
         buffer = BytesIO()
         writer = ImageWriter()

@@ -1,22 +1,17 @@
-import asyncpg
-from fastapi import FastAPI
-from typing import Callable
-from sqlalchemy import create_engine
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.orm import sessionmaker
 import os
+from typing import Callable
+
 from dotenv import load_dotenv
 
-load_dotenv() 
-#DATABASE_URL = os.getenv("DATABASE_URL" , "postgresql://mwinda:mwinda@localhost:5432/mwindaIdentity")
-DATABASE_URL= "postgresql://mwinda:mwinda@localhost:5432/mwindaidentity"
-#DATABASE_URL = "postgresql://mwinda:mwinda@postgres:5432/mwindaIdentity"
+load_dotenv()
+DATABASE_URL = os.getenv("DATABASE_URL")
 
+engine = create_async_engine(DATABASE_URL, echo=True)
 
-engine = create_engine(DATABASE_URL)
-async def connect_to_db():
-    return await asyncpg.connect(DATABASE_URL)
-
-async def close_db_connection(connection):
-    await connection.close()
-
+async_session = sessionmaker(
+    engine, class_=AsyncSession, expire_on_commit=False
+)
 def get_db() -> Callable:
-    return connect_to_db
+    return async_session()

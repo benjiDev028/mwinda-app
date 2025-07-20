@@ -17,16 +17,17 @@ from sqlalchemy import create_engine, inspect
 import uuid
 from datetime import datetime
 from dotenv import load_dotenv
+from app.db.base import Base
 import os
 
 # Charger les variables d'environnement
 load_dotenv()
 
 # Base de SQLAlchemy
-Base = declarative_base()
+
 
 # Configurer le moteur de base de données
-DATABASE_URL = "postgresql://mwinda:mwinda@postgres:5432/mwindaIdentity"
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 if not DATABASE_URL:
     raise ValueError("DATABASE_URL doit être défini dans le fichier .env")
@@ -41,7 +42,7 @@ class UserCode(Base):
     __tablename__ = "user_codes"
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     email = Column(String, nullable=False)
-    code = Column(String, nullable=False)
+    code = Column(Integer, nullable=False)
     created_at = Column(DateTime, default=datetime.now)
 
 

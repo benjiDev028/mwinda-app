@@ -2,10 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException
 from app.services.user_service import update_user_password, get_userv1_by_email, reset_password_request , get_user_by_email
 from app.services.user_code_service import send_reset_code_to_user, verify_code
 from app.db.schemas.password import PasswordUpdate, ResetPasswordRequest, CodeResetPasswordRequest, UpdatePasswordRequest
-from app.db.session import connect_to_db, close_db_connection
+
 from app.core.security import verify_password, get_password_hash
 from app.db.session import get_db
 import asyncpg
+from sqlalchemy.ext.asyncio import AsyncSession
 import logging
 
 # Configuration du logger
@@ -17,12 +18,7 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 
 # Dépendance pour obtenir la session de base de données
-async def get_db():
-    db = await connect_to_db()
-    try:
-        yield db
-    finally:
-        await close_db_connection(db)
+
 
 router = APIRouter(prefix="/identity", tags=["Password"])
 
@@ -32,7 +28,7 @@ Mettre a jour un mot de passe parametres : (Email , old_mdp , new_mdp)
 
 @router.put("/update-password")
 async def update_password_endpoint(
-    user: PasswordUpdate, db: asyncpg.Connection = Depends(get_db)
+    user: PasswordUpdate, db: AsyncSession = Depends(get_db)
 ):
     """
     Endpoint pour mettre à jour le mot de passe.
@@ -53,7 +49,7 @@ async def update_password_endpoint(
 
 @router.put("/reset-password-step1")
 async def reset_password_endpoint(
-    user: ResetPasswordRequest, db: asyncpg.Connection = Depends(get_db)
+    user: ResetPasswordRequest, db: AsyncSession = Depends(get_db)
 ):
     """
     EndPoint pour Envoyer le code via mail
@@ -74,7 +70,7 @@ async def reset_password_endpoint(
 
 @router.put("/reset-password-step2")
 async def reset_password_endpoint(
-    user: CodeResetPasswordRequest, db: asyncpg.Connection = Depends(get_db)
+    user: CodeResetPasswordRequest, db: AsyncSession = Depends(get_db)
 ):
     """
     EndPoint pour Verifier le code 
@@ -94,7 +90,7 @@ async def reset_password_endpoint(
 
 @router.put("/reset-password-step3")
 async def reset_password_endpoint(
-    user: UpdatePasswordRequest, db: asyncpg.Connection = Depends(get_db)
+    user: UpdatePasswordRequest, db: AsyncSession = Depends(get_db)
 ):
     """
     EndPoint pour Reset le nouveau passé 
