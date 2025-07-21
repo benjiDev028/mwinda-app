@@ -17,6 +17,11 @@ app.add_middleware(
 )
 
 # STARTUP : Créer les tables et le superadmin
+
+@app.on_event("startup")
+async def startup_event():
+    await create_superadmin()
+    
 @app.on_event("startup")
 async def startup_event():
     async with engine.begin() as conn:

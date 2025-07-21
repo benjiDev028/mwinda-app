@@ -90,8 +90,7 @@ class UserResponse(UserBase):
     barcode: str = None
     
     class Config:
-        from_attributes = True
-        
+        from_attributes = True    
         orm_mode = True  # Utilisé pour remplacer 'orm_mode' dans Pydantic v2
 
 

@@ -13,7 +13,8 @@ async def create_superadmin():
         print("[ERREUR] SUPERADMIN_EMAIL est manquant dans les variables d'environnement.")
         return
 
-    conn = await asyncpg.connect(DATABASE_URL)
+    db_url = DATABASE_URL.replace('postgresql+asyncpg://', 'postgresql://')
+    conn = await asyncpg.connect(db_url)
     try:
         # Vérifie s’il existe déjà un superadmin ou un utilisateur avec cet email
         existing = await conn.fetchval(

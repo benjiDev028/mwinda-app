@@ -79,7 +79,7 @@ async def register_user(db: AsyncSession, user: UserCreate) -> UserResponse:
                 delivery_mode=aio_pika.DeliveryMode.PERSISTENT,
             )
             await channel.default_exchange.publish(message, routing_key=ACTIVATE_COMPTE_QUEUE)
-        return UserResponse(**dict(new_user))
+        return new_user
 
     except HTTPException as http_error:
         logging.error("HTTP error during user registration: %s", http_error.detail)
