@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  # Service pour votre application FastAPI
+  app:
+    build:
+      context: .  # Contexte de construction (répertoire courant)
+      dockerfile: Dockerfile  # Fichier Dockerfile utilisé pour construire l'image
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8002 --reload
+  # Notez "app.main" ici
+    volumes:
+      - ./app:/app
+    ports:
+      - "8003:8003"  # Expose le port 8000 pour accéder à l'application FastAPI
+    environment:
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/  # URL pour RabbitMQ
+    depends_on:
+      - rabbitmq  # Dépend de RabbitMQ, s'assure que RabbitMQ est prêt avant de démarrer l'application
+
+  # Service pour RabbitMQ avec la gestion de l'interface web
+  rabbitmq:
+    image: rabbitmq:3-management  # Utilise l'image officielle de RabbitMQ avec interface de gestion
+    ports:
+      - "5672:5672"  # Port pour la communication AMQP
+      - "15672:15672"  # Port pour l'interface de gestion RabbitMQ (accessible à http://localhost:15672)
+  
+  # Service pour PostgreSQL
+  # pour lancer : docker run -e POSTGRES_PASSWORD=mwinda postgres 
+  postgres:
+    image: postgres:13  # Utilise l'image officielle de PostgreSQL 13
+    container_name: postgres2  # Nom du conteneur
+    environment:
+      POSTGRES_USER: mwinda  # Utilisateur PostgreSQL
+      POSTGRES_PASSWORD: mwinda  # Mot de passe PostgreSQL
+      POSTGRES_DB: mwindaIdentity  # Base de données PostgreSQL
+    ports:
+      - "5432:5432"  # Expose le port PostgreSQL
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "mwinda", "-d", "mwindaIdentity"]  # Vérifie la disponibilité de PostgreSQL
+      interval: 10s  # Intervalle entre les tests de disponibilité
+      retries: 5  # Nombre de tentatives avant d'abandonner
+      start_period: 30s  # Temps d'attente avant de commencer à tester
+      timeout: 10s  # Délai d'attente pour chaque test
+
+  # Service pour le microservice Identity qui dépend de PostgreSQL
+  identity_service:
+    build:
+      context: .  # Contexte de construction pour le service
+    environment:
+      DATABASE_URL: postgresql://mwinda:mwinda@postgres:5432/mwindaIdentity  # URL de connexion à la base de données PostgreSQL
+    depends_on:
+      - postgres  # S'assure que le service postgres est prêt avant de démarrer
+    #entrypoint: ["./wait-for-postgres.sh", "postgres", "5432", "mwinda", "mwindaIdentity"]  # Script pour attendre que PostgreSQL soit prêt
+    ports:
+      - "8001:8000"  # Expose le port 8000 pour accéder à l'application FastAPI
