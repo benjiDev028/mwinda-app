@@ -3,7 +3,7 @@ from app.services.user_code_service import send_reset_code_to_user, verify_code
 from app.services.user_service import get_user_by_email, activate_user_email
 from app.db.schemas.user import NotificationRequest, Generatecode
 
-from app.db.session import get_db
+from app.db.database import get_db
 import asyncpg
 import logging
 from sqlalchemy.ext.asyncio import AsyncSession

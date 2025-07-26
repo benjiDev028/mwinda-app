@@ -22,6 +22,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+RABBITMQ_URL = os.getenv("RABBITMQ_URL")  #  Configurez l'URL de RabbitMQ
+QUEUE_NAME = "reset_password_queue"  # Nom de la file RabbitMQ
+
 # Configure le logger
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -98,8 +101,7 @@ async def delete_user_code(db: AsyncSession, email: str):
 
 #rabbit mq configuration
 
-RABBITMQ_URL = "amqp://guest:guest@localhost:5672"# Configurez l'URL de RabbitMQ
-QUEUE_NAME = "reset_password_queue"  # Nom de la file RabbitMQ
+
 
 async def send_reset_code_to_user(db: AsyncSession, email: str):
     reset_code = random.randint(10000, 99999)  # PAS DE str()

@@ -26,6 +26,10 @@ class UserFindByName(BaseModel):
 class UserFindByEmail(BaseModel):
     email: str
 
+class UserFindByBarcode(BaseModel):
+    barcode: int
+
+
 class UserFindByBirth(BaseModel):
     date_birth: str
 

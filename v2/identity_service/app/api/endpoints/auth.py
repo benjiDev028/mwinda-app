@@ -12,7 +12,7 @@ from app.db.schemas.auth import UserLogin, RefreshToken
 from app.core.security import create_access_token, create_refresh_token
 import asyncpg
 import os
-from app.db.session import get_db
+from app.db.database import get_db
 import logging
 from sqlalchemy.ext.asyncio import AsyncSession
 

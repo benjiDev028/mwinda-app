@@ -7,7 +7,7 @@ from app.db.schemas.user import UserCreate
 from app.services.user_service import register_user,register_user_admin
 import asyncpg
 import logging
-from app.db.session import get_db
+from app.db.database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -71,7 +71,7 @@ async def register_endpoint(user: UserCreate, db: AsyncSession = Depends(get_db)
 @router.post("/register_admin", status_code=status.HTTP_201_CREATED)
 async def register_endpoint(
     user: UserCreate,
-    db: asyncpg.Connection = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_superadmin_user)
 ):
     """

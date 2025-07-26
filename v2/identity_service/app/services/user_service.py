@@ -266,6 +266,24 @@ async def get_user_by_email(db: AsyncSession, email: str) -> UserResponse:
         logging.error("Error fetching user by email: %s", str(e))
         raise HTTPException(status_code=500, detail="Erreur serveur")
 
+async def get_user_by_barcode(db: AsyncSession, barcode: int) -> UserResponse:
+    try:
+        result = await db.execute(select(User).where(User.barcode == barcode))
+        user = result.scalar_one_or_none()
+
+        if not user:
+            logging.warning("User not found with barcode: %s", barcode)
+            raise HTTPException(status_code=404, detail="Utilisateur non trouvé.")
+
+        return user
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error("Error fetching user by barcode: %s", str(e))
+        raise HTTPException(status_code=500, detail="Erreur serveur")
+
+
 async def delete_user_by_id(db: AsyncSession, user_id: uuid.UUID) -> bool:
     try:
         result = await db.execute(select(User).where(User.id == user_id))

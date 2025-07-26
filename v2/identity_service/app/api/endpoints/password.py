@@ -4,7 +4,7 @@ from app.services.user_code_service import send_reset_code_to_user, verify_code
 from app.db.schemas.password import PasswordUpdate, ResetPasswordRequest, CodeResetPasswordRequest, UpdatePasswordRequest
 
 from app.core.security import verify_password, get_password_hash
-from app.db.session import get_db
+from app.db.database import get_db
 import asyncpg
 from sqlalchemy.ext.asyncio import AsyncSession
 import logging
