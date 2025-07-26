@@ -174,3 +174,53 @@ async def redeem_user_points(db: AsyncSession, user_id: UUID, admin_id: UUID, re
 
     except httpx.HTTPStatusError as e:
         raise HTTPException(status_code=e.response.status_code, detail=str(e))
+
+
+
+from sqlalchemy.orm import Session
+from app.db.models import LoyaltyHistory
+from app.db.schemas import LoyaltyHistoryCreate
+from sqlalchemy import desc
+import uuid
+
+
+async def get_loyalty_history(db: AsyncSession, loyalty_id: uuid.UUID):
+
+    result = await db.execute(select(LoyaltyHistory).where(id=loyalty_id))
+    return result.scalar_one_or_none()
+
+async def get_all_loyalty_history(db: AsyncSession):
+    result = await db.execute(select(LoyaltyHistory).order_by(desc(LoyaltyHistory.date_points)))
+    return result.scalars().all()
+
+
+async def get_user_loyalty_history(db: AsyncSession, user_id: uuid.UUID):
+    
+    result = await db.execute(select(LoyaltyHistory).filter_by(user_id=user_id).order_by(desc(LoyaltyHistory.date_points)))
+    return result.scalars().all()
+
+async def get_admin_loyalty_history(db: AsyncSession, id_admin: uuid.UUID):
+    result = await db.execute(select(LoyaltyHistory).filter_by(id_admin=id_admin).order_by(desc(LoyaltyHistory.date_points)))
+    return result.scalars().all()
+
+async def update_loyalty_history(db: AsyncSession, loyalty_id: uuid.UUID, loyalty_data: LoyaltyHistoryCreate):
+    result =await  db.execute(select(LoyaltyHistory).filter_by(id=loyalty_id))
+    history = result.scalar_one_or_none()
+    if not history:
+        return None
+    
+    for key, value in loyalty_data.dict().items():
+        setattr(history, key, value)
+    
+    await db.commit()
+    await db.refresh(history)
+    return history
+
+async def delete_loyalty_history(db: AsyncSession, loyalty_id: uuid.UUID):
+    result = await db.execute(select(LoyaltyHistory).filter_by(id=loyalty_id))
+    history = result.scalar_one_or_none()
+    if history:
+        await db.delete(history)
+        await db.commit()
+        return True
+    return False

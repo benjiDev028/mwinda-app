@@ -8,6 +8,14 @@ class RedeemPointsRequest(BaseModel):
     admin_id: UUID
     reference : str
 
+class LoyaltyHistoryBase(BaseModel):
+    user_id: UUID
+    points: int
+    service: str
+    reference: str
+    amount: float
+    id_admin: UUID
+
 class RedeemPointsResponse(BaseModel):
     message: str
     user_id: UUID
@@ -40,3 +48,17 @@ class LoyaltyHistoryCreate(BaseModel):
     service : str
     reference : str
     id_admin: UUID
+
+
+class LoyaltyAllHistoryResponse(LoyaltyHistoryBase): 
+    pass
+
+    class Config:
+        orm_mode = True
+
+class LoyaltyHistoryResponse(LoyaltyHistoryBase):
+    id: UUID
+    date_points: datetime
+
+
+

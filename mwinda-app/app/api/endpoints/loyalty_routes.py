@@ -151,6 +151,7 @@ async def get_loyalty_points(user_id: UUID, db: AsyncSession = Depends(get_db)):
         logger.warning(f"Erreur HTTP détectée: {http_err.detail}")
         raise http_err
 
+
     except Exception as exc:
         logger.exception(f"Erreur inattendue lors de la récupération des points: {exc}")
         raise HTTPException(status_code=500, detail="Une erreur inattendue est survenue lors de la récupération des points.")
@@ -178,4 +179,6 @@ async def redeem_points(request: RedeemPointsRequest, db: AsyncSession = Depends
             status_code=500,
             detail="Une erreur inattendue est survenue lors de l'échange des points.",
         )
+
+
 

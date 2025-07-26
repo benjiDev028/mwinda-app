@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from app.db.database import Base, engine
 from app.api.endpoints.loyalty_routes import router as loyalty_router
+from app.api.endpoints.history_routes import router as history_router
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -17,3 +18,4 @@ app.add_middleware(
 
 # Enregistrement des routes
 app.include_router(loyalty_router, prefix="/loyalty", tags=["Loyalty"])
+app.include_router(history_router, prefix="/history", tags=["History"])
