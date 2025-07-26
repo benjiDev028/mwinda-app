@@ -144,10 +144,10 @@ export default function AdminHomeScreen() {
     >
       <View style={styles.activityHeader}>
         <Icon 
-          name={item.reference.includes('Studio') ? 'photo-camera' : 'event'} 
-          size={18} 
-          color={PRIMARY_COLOR} 
-        />
+  name={item.reference?.includes('Studio') ? 'photo-camera' : 'event'} 
+  size={18} 
+  color={PRIMARY_COLOR} 
+/>
         <Text style={styles.activityClient}>{item.clientName}</Text>
         <Text style={styles.activityPoints}>+{item.points} pts</Text>
       </View>

@@ -9,7 +9,6 @@ import {
   ActivityIndicator,
   Easing,
   StyleSheet,
-  StatusBar,
   Platform,
   KeyboardAvoidingView,
   TouchableWithoutFeedback,

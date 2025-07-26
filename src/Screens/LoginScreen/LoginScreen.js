@@ -14,8 +14,9 @@ import {
   Platform,
   Easing,
   StyleSheet,
-  StatusBar
 } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
+
 import { Snackbar, Provider as PaperProvider } from 'react-native-paper';
 import styles from './Styles';
 import splash from '../../../assets/img/splash.png';

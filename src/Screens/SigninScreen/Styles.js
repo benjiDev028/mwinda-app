@@ -7,6 +7,7 @@ const styles = {
     flex: 1,
     backgroundColor: '#F9F9F9',
   },
+  
   container1: {
     alignItems: 'center',
     paddingVertical: 25,
@@ -101,6 +102,109 @@ const styles = {
     fontWeight: '700',
     textDecorationLine: 'underline',
   },
+
+
+
+  // Ajoutez ces styles à votre fichier Styles.js existant
+termsContainer: {
+  marginVertical: 15,
+},
+checkboxContainer: {
+  flexDirection: 'row',
+  alignItems: 'flex-start',
+  marginBottom: 10,
+},
+checkbox: {
+  width: 20,
+  height: 20,
+  borderWidth: 2,
+  borderColor: '#ddd',
+  marginRight: 10,
+  justifyContent: 'center',
+  alignItems: 'center',
+  borderRadius: 3,
+},
+checkboxChecked: {
+  backgroundColor: '#007AFF',
+  borderColor: '#007AFF',
+},
+checkmark: {
+  color: 'white',
+  fontWeight: 'bold',
+  fontSize: 12,
+},
+checkboxText: {
+  flex: 1,
+  fontSize: 14,
+  color: '#333',
+  lineHeight: 20,
+},
+termsLink: {
+  color: '#007AFF',
+  textDecorationLine: 'underline',
+},
+disabledButton: {
+  opacity: 0.5,
+},
+modalContainer: {
+  flex: 1,
+  backgroundColor: 'rgba(0,0,0,0.5)',
+  justifyContent: 'center',
+  alignItems: 'center',
+},
+modalContent: {
+  backgroundColor: 'white',
+  margin: 20,
+  borderRadius: 10,
+  padding: 20,
+  maxHeight: '80%',
+  width: '90%',
+},
+modalHeader: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  marginBottom: 15,
+  borderBottomWidth: 1,
+  borderBottomColor: '#eee',
+  paddingBottom: 10,
+},
+modalTitle: {
+  fontSize: 18,
+  fontWeight: 'bold',
+  flex: 1,
+},
+closeButton: {
+  padding: 5,
+},
+closeButtonText: {
+  fontSize: 20,
+  color: '#666',
+},
+modalScrollView: {
+  maxHeight: 400,
+},
+termsText: {
+  fontSize: 14,
+  lineHeight: 22,
+  color: '#333',
+},
+termsTitle: {
+  fontWeight: 'bold',
+  fontSize: 16,
+},
+acceptButton: {
+  backgroundColor: '#007AFF',
+  padding: 15,
+  borderRadius: 8,
+  alignItems: 'center',
+  marginTop: 15,
+},
+acceptButtonText: {
+  color: 'white',
+  fontWeight: 'bold',
+  fontSize: 16,
+},
 };
 
 export default styles;

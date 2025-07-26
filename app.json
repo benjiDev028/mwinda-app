@@ -4,42 +4,50 @@
     "slug": "Mwinda",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/img/icon.png",
     "userInterfaceStyle": "light",
     "backgroundColor": "#fec107",
-    "newArchEnabled": true,
-    "permissions": ["CAMERA"],
+    "newArchEnabled": false,
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/img/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#fec107"
     },
     "assetBundlePatterns": [
-      "**/*"
+      "assets/img/*"
     ],
     "ios": {
       "supportsTablet": true,
-       "jsEngine": "jsc",
-      "bundleIdentifier": "com.yourapp.identifier",
+      "bundleIdentifier": "com.coretech.mwinda",
+      "jsEngine": "jsc",
       "infoPlist": {
-        "NSMicrophoneUsageDescription": "This app requires microphone access"
+        "NSMicrophoneUsageDescription": "This app requires microphone access",
+        "NSCameraUsageDescription": "This app requires camera access"
       }
     },
     "android": {
-       "jsEngine": "jsc",
+      "jsEngine": "jsc",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/img/adaptive-icon.png",
         "backgroundColor": "#fec107"
       },
-      "useNextNotificationsApi": true
+      "permissions": [
+        "CAMERA",
+        "RECORD_AUDIO"
+      ]
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/img/favicon.png"
     },
     "plugins": [
       "expo-localization",
-      "expo-barcode-scanner",
-      "expo-notifications"
+      [
+        "expo-barcode-scanner",
+        {
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access camera."
+        }
+      ],
+      "expo-router"
     ]
   }
 }

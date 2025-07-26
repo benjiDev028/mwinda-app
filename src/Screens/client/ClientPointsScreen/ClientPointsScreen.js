@@ -76,7 +76,7 @@ export default function ClientPointsScreen() {
         {/* Header Section */}
         <View style={styles.header}>
           <Text style={styles.title}>{t('your points')}</Text>
-          <Text style={styles.subtitle}>{t('accumulate_points')}</Text>
+          
         </View>
 
         {/* Points Cards */}
@@ -127,10 +127,7 @@ export default function ClientPointsScreen() {
         </View>
 
         {/* Info Section */}
-        <View style={styles.infoContainer}>
-          <MaterialIcons name="info-outline" size={18} color="#9E9E9E" />
-          <Text style={styles.infoText}>{t('points_info')}</Text>
-        </View>
+        
       </View>
     </ScrollView>
   );

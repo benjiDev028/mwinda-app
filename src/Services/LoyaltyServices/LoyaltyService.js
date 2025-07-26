@@ -3,7 +3,6 @@ import { API_URL,PORT_LOYALTY } from '@env'
 
 const url = `${API_URL}${PORT_LOYALTY}`
 
-// const url = "http://192.168.2.13:8003";
 
 
 

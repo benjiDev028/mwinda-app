@@ -75,7 +75,7 @@ const onRefresh = async()=>{
     >
       <View style={styles.historyHeader}>
         <MaterialIcons 
-          name={item.reference.includes('Studio') ? 'music-note' : 'event'} 
+          name={item.reference?.includes('Studio') ? 'music-note' : 'event'} 
           size={24} 
           color="#4CAF50" 
         />

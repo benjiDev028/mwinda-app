@@ -15,6 +15,7 @@ import {
   StyleSheet,
   Dimensions
 } from 'react-native';
+import { API_URL, PORT_USER } from '@env'
 import splash from '../../../../assets/splash.png';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { AuthContext } from '../../../context/AuthContext';
@@ -23,11 +24,16 @@ import UserService from '../../../Services/UserServices/UserService';
 
 const { width } = Dimensions.get('window');
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// const url = "http://192.168.2.13:8002";
+const url = `${API_URL}${PORT_USER}`
+
 const INPUT_FIELDS = [
   { label: 'Firstname', key: 'firstname', placeholder: 'Firstname', secure: false, required: true },
   { label: 'Lastname', key: 'lastname', placeholder: 'Lastname', secure: false, required: true },
   { label: 'Email', key: 'email', placeholder: 'johndoe@gmail.com', secure: false, required: true },
-  { label: 'Date of Birth', key: 'date_birth', placeholder: 'YYYY-MM-DD', secure: false, required: true },
+  { label: 'Date of Birth', key: 'date_birth', placeholder: 'DD/MM/YYYY', secure: false, required: true },
 ];
 
 export default function ClientProfileScreen() {
@@ -44,6 +50,65 @@ export default function ClientProfileScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [errors, setErrors] = useState({});
+
+  // Fonction pour formater automatiquement la date pendant la saisie
+  const handleDateChange = (text) => {
+    // Supprimer tous les caractères non numériques
+    let cleanText = text.replace(/\D/g, '');
+    
+    // Limiter à 8 chiffres
+    if (cleanText.length > 8) {
+      cleanText = cleanText.substring(0, 8);
+    }
+    
+    // Ajouter les slashes automatiquement pour le format DD/MM/YYYY
+    if (cleanText.length >= 3 && cleanText.length <= 4) {
+      cleanText = cleanText.substring(0, 2) + '/' + cleanText.substring(2);
+    } else if (cleanText.length > 4) {
+      cleanText = cleanText.substring(0, 2) + '/' + cleanText.substring(2, 4) + '/' + cleanText.substring(4);
+    }
+    
+    updateField('date_birth', cleanText);
+  };
+
+  // Fonction pour convertir DD/MM/YYYY vers YYYY-MM-DD
+  const formatDateForAPI = (dateString) => {
+    if (!dateString || dateString.length !== 10) return '';
+    
+    const parts = dateString.split('/');
+    if (parts.length !== 3) return '';
+    
+    const [day, month, year] = parts;
+    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+  };
+
+  // Fonction pour convertir YYYY-MM-DD vers DD/MM/YYYY
+  const formatDateFromAPI = (dateString) => {
+    if (!dateString) return '';
+    
+    const parts = dateString.split('-');
+    if (parts.length !== 3) return '';
+    
+    const [year, month, day] = parts;
+    return `${day}/${month}/${year}`;
+  };
+
+  // Fonction pour valider le format de date DD/MM/YYYY
+  const isValidDate = (dateString) => {
+    if (!dateString || dateString.length !== 10) return false;
+    
+    const regex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+    const match = dateString.match(regex);
+    
+    if (!match) return false;
+    
+    const [, day, month, year] = match;
+    const date = new Date(year, month - 1, day);
+    
+    return date.getFullYear() == year && 
+           date.getMonth() == month - 1 && 
+           date.getDate() == day;
+  };
 
   const updateField = (field, value) => {
     setUserData(prev => ({ ...prev, [field]: value }));
@@ -67,11 +132,11 @@ export default function ClientProfileScreen() {
       newErrors.email = 'Please enter a valid email address';
     }
     
-    // if (!userData.date_birth.trim()) {
-    //   newErrors.date_birth = 'Date of birth is required';
-    // } else if (!/^\d{4}-\d{2}-\d{2}$/.test(userData.date_birth)) {
-    //   newErrors.date_birth = 'Please enter date in YYYY-MM-DD format';
-    // }
+    if (!userData.date_birth.trim()) {
+      newErrors.date_birth = 'Date of birth is required';
+    } else if (!isValidDate(userData.date_birth)) {
+      newErrors.date_birth = 'Please enter a valid date in DD/MM/YYYY format';
+    }
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -96,7 +161,7 @@ export default function ClientProfileScreen() {
         first_name: userData.firstname,
         last_name: userData.lastname,
         email: userData.email,
-        date_birth: userData.date_birth,
+        date_birth: formatDateForAPI(userData.date_birth), // Convertir vers YYYY-MM-DD pour l'API
       }, authToken);
 
       if (updateUser) {
@@ -119,7 +184,7 @@ export default function ClientProfileScreen() {
   const getUserData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`http://192.168.2.13:8002/identity/get_user_by_id/${id}`, {
+      const response = await fetch(`${url}/identity/get_user_by_id/${id}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${authToken}`,
@@ -132,7 +197,7 @@ export default function ClientProfileScreen() {
           firstname: data.first_name || '',
           lastname: data.last_name || '',
           email: data.email || '',
-          date_birth: data.date_birth || '',
+          date_birth: formatDateFromAPI(data.date_birth) || '', // Convertir vers DD/MM/YYYY pour l'affichage
         });
       } else {
         throw new Error('Failed to load user data');
@@ -164,10 +229,12 @@ export default function ClientProfileScreen() {
         ]}
         placeholder={placeholder}
         value={userData[key]}
-        onChangeText={(value) => updateField(key, value)}
+        onChangeText={key === 'date_birth' ? handleDateChange : (value) => updateField(key, value)}
         editable={isEditing}
         secureTextEntry={secure}
         placeholderTextColor="#999"
+        keyboardType={key === 'date_birth' ? 'numeric' : 'default'}
+        maxLength={key === 'date_birth' ? 10 : undefined}
       />
       {errors[key] && <Text style={styles.errorText}>{errors[key]}</Text>}
     </View>
