@@ -11,40 +11,72 @@ import {
   ActivityIndicator,
   TextInput,
   Alert,
-  StyleSheet
 } from 'react-native';
+import { MaskedTextInput } from 'react-native-mask-text';
+import styles from './Styles';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { AuthContext } from '../../../context/AuthContext';
 import UserService from '../../../Services/UserServices/UserService';
 import HistoryService from '../../../Services/HistoryServices/HistoryService';
-
+import { useNavigation } from '@react-navigation/native';
 
 const PRIMARY_COLOR = 'red';
 const WHITE = '#ffffff';
 const DARK_GRAY = '#2c3e50';
 const LIGHT_GRAY = '#f5f5f5';
 
+const TAB_ICON = {
+  dashboard: 'dashboard',
+  clients: 'people',
+  analytics: 'analytics', // si jamais ça n’existe pas chez toi, remplace par 'insert-chart'
+};
+
+// ————— helpers validation —————
+const validateEmail = (email) =>
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email).toLowerCase());
+
+const validatePassword = (pwd) =>
+  /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z0-9]).{6,}$/.test(pwd);
+
+const parseBirthDate = (input) => {
+  // attend "JJ/MM/AAAA" -> renvoie "AAAA-MM-DD"
+  //const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(input.trim());
+  const m = /^(\d{2})-(\d{2})-(\d{4})$/.exec(input.trim());
+  if (!m) return { ok: false, msg: "Format attendu: JJ-MM-AAAA." };
+  const [_, jj, mm, aaaa] = m;
+  const iso = `${aaaa}-${mm}-${jj}`;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return { ok: false, msg: "Date invalide." };
+  // simple garde-fou : pas dans le futur, et > 1900
+  const now = new Date();
+  if (d > now) return { ok: false, msg: "La date de naissance ne peut pas être future." };
+  if (parseInt(aaaa, 10) < 1900) return { ok: false, msg: "Année invalide." };
+  return { ok: true, iso };
+};
+
 export default function AdminHomeScreen() {
+  const navigation = useNavigation();
   const { logout, id, userRole } = useContext(AuthContext);
+
   const [selectedTab, setSelectedTab] = useState('dashboard');
   const [stats, setStats] = useState({
     totalUsers: 0,
     activeClients: 0,
-    bonusEligibleClients: 0
+    bonusEligibleClients: 0,
   });
   const [recentActivities, setRecentActivities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
   const [adminForm, setAdminForm] = useState({
     first_name: '',
     last_name: '',
     email: '',
     password: '',
-    date_birth: ''
+    date_birth: '', // JJ/MM/AAAA côté UI
   });
   const [isCreatingAdmin, setIsCreatingAdmin] = useState(false);
 
-  // Animations
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideUp = useRef(new Animated.Value(30)).current;
 
@@ -52,23 +84,24 @@ export default function AdminHomeScreen() {
     try {
       const [users, activities] = await Promise.all([
         UserService.GetUsers(),
-        HistoryService.getHistoryAdminById(id)
+        HistoryService.getHistoryAdminById(id),
       ]);
 
-      const activeClients = users.filter(user => user.is_email_verified).length;
-      const bonusEligible = users.filter(user => 
-        user.pointstudios >= 5000 || user.pointevents >= 40000
+      const activeClients = (users || []).filter(u => u?.is_email_verified).length;
+      const bonusEligible = (users || []).filter(
+        u => (u?.pointstudios ?? 0) >= 5000 || (u?.pointevents ?? 0) >= 40000
       ).length;
 
       setStats({
-        totalUsers: users.length,
+        totalUsers: users?.length ?? 0,
         activeClients,
-        bonusEligibleClients: bonusEligible
+        bonusEligibleClients: bonusEligible,
       });
 
-      setRecentActivities(activities?.slice(0, 5) || []);
+      setRecentActivities((activities || []).slice(0, 5));
     } catch (error) {
       console.error('Error fetching data:', error);
+      // on évite le flood de logs “Utilisateur non trouvé.” venant de services internes
     } finally {
       setLoading(false);
     }
@@ -81,25 +114,69 @@ export default function AdminHomeScreen() {
   };
 
   const handleCreateAdmin = async () => {
-    if (userRole !== 'superadmin') {
-      Alert.alert('Erreur', 'Seuls les superadmins peuvent créer des comptes admin');
+    const { first_name, last_name, email, password, date_birth } = adminForm;
+
+    if (!first_name || !last_name || !email || !password || !date_birth) {
+      Alert.alert('Avertissement', 'Tous les champs sont obligatoires.');
       return;
     }
 
+    if (!validateEmail(email)) {
+      Alert.alert('Avertissement', 'Veuillez entrer un email valide.');
+      return;
+    }
+
+    const birth = parseBirthDate(date_birth);
+    if (!birth.ok) {
+      Alert.alert('Avertissement', birth.msg);
+      return;
+    }
+
+    // if (!validatePassword(password)) {
+    //   Alert.alert(
+    //     'Avertissement',
+    //     'Le mot de passe doit contenir au moins 6 caractères, une lettre, un chiffre et un caractère spécial.'
+    //   );
+    //   return;
+    // }
+
+    setIsCreatingAdmin(true);
     try {
-      setIsCreatingAdmin(true);
-      await UserService.registerAdmin(adminForm);
-      Alert.alert('Succès', 'Admin créé avec succès');
-      setAdminForm({
-        first_name: '',
-        last_name: '',
-        email: '',
-        password: '',
-        date_birth: ''
-      });
-      fetchData(); // Rafraîchir les données
-    } catch (error) {
-      Alert.alert('Erreur', error.message);
+      const resp = await UserService.add_Admin(
+        first_name.trim(),
+        last_name.trim(),
+        email.trim().toLowerCase(),
+        password,
+        birth.iso // on envoie en ISO au backend
+      );
+
+      if (resp?.success) {
+        Alert.alert('Succès', 'Administrateur créé avec succès.');
+        // reset formulaire
+        setAdminForm({
+          first_name: '',
+          last_name: '',
+          email: '',
+          password: '',
+          date_birth: '',
+        });
+        // si tu veux naviguer, ici au moins navigation existe
+        // navigation.navigate('Login');
+      } else {
+        // certains de tes services renvoient {status:"EMAIL_ALREADY_REGISTERED"} ou {error:"…"}
+        const status = resp?.status || resp?.detail || '';
+        if (status === 'EMAIL_ALREADY_REGISTERED') {
+          Alert.alert('Avertissement', "Cet email est déjà enregistré.");
+        } else {
+          Alert.alert('Avertissement', resp?.error || 'Une erreur est survenue, veuillez réessayer.');
+        }
+      }
+    } catch (e) {
+      console.error('Error during admin creation:', e);
+      Alert.alert(
+        'Avertissement',
+        "Une erreur est survenue. Vérifiez votre connexion ou réessayez plus tard."
+      );
     } finally {
       setIsCreatingAdmin(false);
     }
@@ -112,14 +189,15 @@ export default function AdminHomeScreen() {
       Animated.timing(fadeAnim, {
         toValue: 1,
         duration: 800,
-        useNativeDriver: true
+        useNativeDriver: true,
       }),
       Animated.timing(slideUp, {
         toValue: 0,
         duration: 500,
-        useNativeDriver: true
-      })
+        useNativeDriver: true,
+      }),
     ]).start();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const renderStatCard = (value, label, icon, color) => (
@@ -132,35 +210,29 @@ export default function AdminHomeScreen() {
     </Animated.View>
   );
 
-  const renderActivityItem = ({ item, index }) => (
-    <Animated.View 
-      style={[
-        styles.activityCard,
-        { 
-          opacity: fadeAnim,
-          transform: [{ translateY: slideUp }] 
-        }
-      ]}
-    >
+  const renderActivityItem = ({ item }) => (
+    <Animated.View style={[styles.activityCard, { opacity: fadeAnim, transform: [{ translateY: slideUp }] }]}>
       <View style={styles.activityHeader}>
-        <Icon 
-  name={item.reference?.includes('Studio') ? 'photo-camera' : 'event'} 
-  size={18} 
-  color={PRIMARY_COLOR} 
-/>
-        <Text style={styles.activityClient}>{item.clientName}</Text>
-        <Text style={styles.activityPoints}>+{item.points} pts</Text>
+        <Icon
+          name={item?.reference?.includes('Studio') ? 'photo-camera' : 'event'}
+          size={18}
+          color={PRIMARY_COLOR}
+        />
+        <Text style={styles.activityClient}>{item?.clientName ?? 'Client'}</Text>
+        <Text style={styles.activityPoints}>+{item?.points ?? 0} pts</Text>
       </View>
-      <Text style={styles.activityReference}>{item.reference}</Text>
+      <Text style={styles.activityReference}>{item?.reference ?? '-'}</Text>
       <View style={styles.activityFooter}>
-        <Text style={styles.activityAmount}>{item.amount} $</Text>
+        <Text style={styles.activityAmount}>{item?.amount ?? 0} $</Text>
         <Text style={styles.activityDate}>
-          {new Date(item.date_points).toLocaleDateString('fr-FR', {
-            day: 'numeric',
-            month: 'short',
-            hour: '2-digit',
-            minute: '2-digit'
-          })}
+          {item?.date_points
+            ? new Date(item.date_points).toLocaleDateString('fr-FR', {
+                day: 'numeric',
+                month: 'short',
+                hour: '2-digit',
+                minute: '2-digit',
+              })
+            : '-'}
         </Text>
       </View>
     </Animated.View>
@@ -169,45 +241,43 @@ export default function AdminHomeScreen() {
   const renderAdminForm = () => (
     <Animated.View style={[styles.formContainer, { opacity: fadeAnim }]}>
       <Text style={styles.formTitle}>Créer un nouvel admin</Text>
-      
+
       <TextInput
         style={styles.input}
         placeholder="Prénom"
         value={adminForm.first_name}
-        onChangeText={(text) => setAdminForm({...adminForm, first_name: text})}
+        onChangeText={(text) => setAdminForm({ ...adminForm, first_name: text })}
       />
-      
       <TextInput
         style={styles.input}
         placeholder="Nom"
         value={adminForm.last_name}
-        onChangeText={(text) => setAdminForm({...adminForm, last_name: text})}
+        onChangeText={(text) => setAdminForm({ ...adminForm, last_name: text })}
       />
-      
       <TextInput
         style={styles.input}
         placeholder="Email"
         keyboardType="email-address"
         autoCapitalize="none"
         value={adminForm.email}
-        onChangeText={(text) => setAdminForm({...adminForm, email: text})}
+        onChangeText={(text) => setAdminForm({ ...adminForm, email: text })}
       />
-      
       <TextInput
         style={styles.input}
         placeholder="Mot de passe"
         secureTextEntry
         value={adminForm.password}
-        onChangeText={(text) => setAdminForm({...adminForm, password: text})}
+        onChangeText={(text) => setAdminForm({ ...adminForm, password: text })}
       />
-      
-      <TextInput
+      <MaskedTextInput
         style={styles.input}
+        mask ="99/99/9999"
+        keyboardType='numeric'
         placeholder="Date de naissance (JJ/MM/AAAA)"
         value={adminForm.date_birth}
-        onChangeText={(text) => setAdminForm({...adminForm, date_birth: text})}
+        onChangeText={(text) => setAdminForm({ ...adminForm, date_birth: text })}
       />
-      
+
       <TouchableOpacity
         style={styles.submitButton}
         onPress={handleCreateAdmin}
@@ -236,14 +306,11 @@ export default function AdminHomeScreen() {
           {['dashboard', 'clients', 'analytics'].map((tab) => (
             <TouchableOpacity
               key={tab}
-              style={[
-                styles.tabButton,
-                selectedTab === tab && styles.activeTab
-              ]}
+              style={[styles.tabButton, selectedTab === tab && styles.activeTab]}
               onPress={() => setSelectedTab(tab)}
             >
               <Icon
-                name={tab}
+                name={TAB_ICON[tab]}
                 size={24}
                 color={selectedTab === tab ? PRIMARY_COLOR : DARK_GRAY}
               />
@@ -279,7 +346,7 @@ export default function AdminHomeScreen() {
                 <FlatList
                   data={recentActivities}
                   renderItem={renderActivityItem}
-                  keyExtractor={item => item.id.toString()}
+                  keyExtractor={(item, idx) => String(item?.id ?? idx)}
                   scrollEnabled={false}
                 />
               ) : (
@@ -315,190 +382,3 @@ export default function AdminHomeScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: WHITE
-  },
-  header: {
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: LIGHT_GRAY
-  },
-  headerTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '600',
-    color: DARK_GRAY
-  },
-  tabBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-around'
-  },
-  tabButton: {
-    padding: 8
-  },
-  activeTab: {
-    borderBottomWidth: 2,
-    borderBottomColor: PRIMARY_COLOR
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    padding: 16
-  },
-  statCard: {
-    width: '30%',
-    backgroundColor: WHITE,
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2
-  },
-  statHeader: {
-    alignSelf: 'flex-start',
-    marginBottom: 8
-  },
-  statNumber: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: DARK_GRAY,
-    marginBottom: 4
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#666',
-    textAlign: 'center'
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: DARK_GRAY,
-    margin: 16,
-    marginBottom: 8
-  },
-  activityCard: {
-    backgroundColor: WHITE,
-    borderRadius: 8,
-    padding: 16,
-    marginHorizontal: 16,
-    marginBottom: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: PRIMARY_COLOR,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1
-  },
-  activityHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8
-  },
-  activityClient: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: DARK_GRAY,
-    marginLeft: 8,
-    flex: 1
-  },
-  activityPoints: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: PRIMARY_COLOR
-  },
-  activityReference: {
-    fontSize: 12,
-    color: '#666',
-    marginBottom: 8
-  },
-  activityFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between'
-  },
-  activityAmount: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: DARK_GRAY
-  },
-  activityDate: {
-    fontSize: 12,
-    color: '#999'
-  },
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 40
-  },
-  emptyText: {
-    fontSize: 16,
-    color: '#999',
-    marginTop: 16
-  },
-  comingSoon: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 20
-  },
-  comingSoonText: {
-    fontSize: 16,
-    color: DARK_GRAY,
-    marginTop: 16
-  },
-  loader: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  formContainer: {
-    backgroundColor: WHITE,
-    borderRadius: 12,
-    padding: 20,
-    margin: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 2
-  },
-  formTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: DARK_GRAY,
-    marginBottom: 16,
-    textAlign: 'center'
-  },
-  input: {
-    height: 40,
-    borderColor: LIGHT_GRAY,
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    marginBottom: 16,
-    backgroundColor: WHITE
-  },
-  submitButton: {
-    backgroundColor: PRIMARY_COLOR,
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 8
-  },
-  submitButtonText: {
-    color: WHITE,
-    fontWeight: '600',
-    fontSize: 16
-  }
-});

@@ -1,0 +1,24 @@
+{
+  "cli": {
+    "version": ">= 16.17.4",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
+    },
+    "preview": {
+      "distribution": "internal",
+      "android": { "buildType": "apk" }          // 👉 APK rapide pour tests internes
+    },
+    "production": {
+      "distribution": "store",
+      "android": { "buildType": "app-bundle" },  // 👉 AAB exigé par Google Play
+      "autoIncrement": true                      // 👉 incrémente versionCode (Android) & buildNumber (iOS) en mode remote
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}

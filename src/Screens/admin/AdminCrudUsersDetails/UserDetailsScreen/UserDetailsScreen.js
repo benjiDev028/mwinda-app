@@ -11,30 +11,69 @@ import {
   RefreshControl,
   Image
 } from 'react-native';
+import { Linking } from 'react-native';
+
 import { MaterialIcons } from '@expo/vector-icons';
 import UserService from '../../../../Services/UserServices/UserService';
+import ResetPasswordService from '../../../../Services/PasswordServices/ResetPasswordService';
 import LoyaltyService from '../../../../Services/LoyaltyServices/LoyaltyService';
 import { AuthContext } from '../../../../context/AuthContext';
+import { Link } from '@react-navigation/native';
 
 const UserDetailsScreen = ({ route, navigation }) => {
-  const { id } = route.params;
-  const { id: id_admin } = useContext(AuthContext);
+  // ✅ Sécurisation de l'accès aux paramètres
+  const routeParams = route?.params || {};
+  const { id } = routeParams;
+  
+  const authContext = useContext(AuthContext);
+  const { id: id_admin } = authContext || {};
+  
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const fadeAnim = useState(new Animated.Value(0))[0];
+  // ✅ Vérification des paramètres requis
+  useEffect(() => {
+    if (!id) {
+      setError('ID utilisateur manquant');
+      setLoading(false);
+      return;
+    }
+    
+    if (!id_admin) {
+      setError('Session administrateur non valide');
+      setLoading(false);
+      return;
+    }
+    
+    fetchUserDetails();
+  }, [id, id_admin]);
 
   const fetchUserDetails = async () => {
+    // ✅ Double vérification avant l'appel API
+    if (!id) {
+      setError('ID utilisateur manquant');
+      setLoading(false);
+      setRefreshing(false);
+      return;
+    }
+
     try {
+      console.log('🔍 Récupération des détails pour l\'ID:', id);
       const userData = await UserService.GetUserById(id);
+      console.log('✅ Données utilisateur récupérées:', userData);
+      
       setUser(userData);
+      setError(null);
+      
       Animated.timing(fadeAnim, {
         toValue: 1,
         duration: 500,
         useNativeDriver: true,
       }).start();
     } catch (error) {
+      console.error('❌ Erreur lors du chargement des détails:', error);
       setError('Erreur lors du chargement des détails');
     } finally {
       setLoading(false);
@@ -42,17 +81,24 @@ const UserDetailsScreen = ({ route, navigation }) => {
     }
   };
 
-  useEffect(() => {
-    fetchUserDetails();
-  }, [id]);
-
   const handleRefresh = () => {
+    if (!id) {
+      Alert.alert('Erreur', 'ID utilisateur manquant pour actualiser');
+      return;
+    }
     setRefreshing(true);
     fetchUserDetails();
   };
 
   const redeemPoints = async (pointType) => {
+    // ✅ Vérifications avant l'appel
+    if (!id || !id_admin) {
+      Alert.alert('Erreur', 'Informations manquantes pour réclamer les points');
+      return;
+    }
+
     try {
+      console.log(`🎯 Réclamation de points ${pointType} pour:`, { id, id_admin });
       await LoyaltyService.GotYourPoint(id, id_admin, pointType);
       Alert.alert(
         'Succès',
@@ -63,21 +109,48 @@ const UserDetailsScreen = ({ route, navigation }) => {
         }]
       );
     } catch (error) {
+      console.error(`❌ Erreur réclamation ${pointType}:`, error);
       Alert.alert('Erreur', `Erreur lors de la réclamation des points ${pointType}`);
     }
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('fr-FR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    if (!dateString) return 'Date non disponible';
+    
+    try {
+      const date = new Date(dateString);
+      const localTZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      return date.toLocaleString('fr-CA', {
+        timeZone: localTZ,
+        weekday: 'short',
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    } catch (error) {
+      console.error('❌ Erreur formatage date:', error);
+      return 'Date invalide';
+    }
   };
+
+  // ✅ Gestion des erreurs de paramètres
+  if (!id) {
+    return (
+      <View style={styles.errorContainer}>
+        <MaterialIcons name="error-outline" size={50} color="#F44336" />
+        <Text style={styles.errorText}>ID utilisateur manquant</Text>
+        <TouchableOpacity 
+          style={styles.retryButton} 
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={styles.retryButtonText}>Retour</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
 
   if (loading) {
     return (
@@ -125,10 +198,30 @@ const UserDetailsScreen = ({ route, navigation }) => {
             <View style={styles.avatar}>
               <MaterialIcons name="person" size={40} color="#FEC109" />
             </View>
-            <Text style={styles.userName}>{user.first_name} {user.last_name}</Text>
+            <Text style={styles.userName}>
+              {user.first_name || 'Prénom'} {user.last_name || 'Nom'}
+            </Text>
             {!user.is_email_verified && (
               <View style={styles.verificationBadge}>
-                <Text style={styles.verificationText}>Non vérifié</Text>
+                <Text style={styles.verificationText}>      Non vérifié</Text>
+             <TouchableOpacity
+      onPress={() => {
+        
+      
+           ResetPasswordService.ResendEmail(user.email);
+            Alert.alert('Succès', 'Email de vérification renvoyé'+user.email);
+         
+        
+      }}
+    >
+         
+   
+      <Text style={{ color: '#1976D2', textDecorationLine: 'underline', fontWeight: '600', marginTop: 10 }}>
+        Vérifier l’email
+      </Text>
+    </TouchableOpacity>
+                
+                
               </View>
             )}
           </View>
@@ -136,7 +229,7 @@ const UserDetailsScreen = ({ route, navigation }) => {
           <View style={styles.detailSection}>
             <View style={styles.detailRow}>
               <MaterialIcons name="email" size={20} color="#666" />
-              <Text style={styles.detailText}>{user.email}</Text>
+              <Text style={styles.detailText}>{user.email || 'Email non disponible'}</Text>
             </View>
             <View style={styles.detailRow}>
               <MaterialIcons name="date-range" size={20} color="#666" />
@@ -152,12 +245,12 @@ const UserDetailsScreen = ({ route, navigation }) => {
             <View style={styles.pointsCard}>
               <MaterialIcons name="event" size={24} color="#4CAF50" />
               <Text style={styles.pointsLabel}>Points Événements</Text>
-              <Text style={styles.pointsValue}>{user.pointevents}</Text>
+              <Text style={styles.pointsValue}>{user.pointevents || 0}</Text>
             </View>
             <View style={styles.pointsCard}>
               <MaterialIcons name="music-note" size={24} color="#2196F3" />
               <Text style={styles.pointsLabel}>Points Studios</Text>
-              <Text style={styles.pointsValue}>{user.pointstudios}</Text>
+              <Text style={styles.pointsValue}>{user.pointstudios || 0}</Text>
             </View>
           </View>
         </View>
@@ -167,19 +260,23 @@ const UserDetailsScreen = ({ route, navigation }) => {
             style={[
               styles.rewardButton, 
               { 
-                backgroundColor: user.pointevents >= 40000 ? '#4CAF50' : '#E0E0E0',
+                backgroundColor: (user.pointevents || 0) >= 40000 ? '#4CAF50' : '#E0E0E0',
                 flexDirection: 'row',
                 alignItems: 'center',
                 justifyContent: 'center'
               }
             ]} 
-            disabled={user.pointevents < 40000}
+            disabled={(user.pointevents || 0) < 40000}
             onPress={() => redeemPoints('Event')}
           >
-            <MaterialIcons name="event-available" size={20} color={user.pointevents >= 40000 ? '#FFF' : '#9E9E9E'} />
+            <MaterialIcons 
+              name="event-available" 
+              size={20} 
+              color={(user.pointevents || 0) >= 40000 ? '#FFF' : '#9E9E9E'} 
+            />
             <Text style={[
               styles.buttonText,
-              { color: user.pointevents >= 40000 ? '#FFF' : '#9E9E9E' }
+              { color: (user.pointevents || 0) >= 40000 ? '#FFF' : '#9E9E9E' }
             ]}>
               Récompense Événements
             </Text>
@@ -189,19 +286,23 @@ const UserDetailsScreen = ({ route, navigation }) => {
             style={[
               styles.rewardButton, 
               { 
-                backgroundColor: user.pointstudios >= 5000 ? '#2196F3' : '#E0E0E0',
+                backgroundColor: (user.pointstudios || 0) >= 5000 ? '#2196F3' : '#E0E0E0',
                 flexDirection: 'row',
                 alignItems: 'center',
                 justifyContent: 'center'
               }
             ]} 
-            disabled={user.pointstudios < 5000}
+            disabled={(user.pointstudios || 0) < 5000}
             onPress={() => redeemPoints('Studio')}
           >
-            <MaterialIcons name="music-video" size={20} color={user.pointstudios >= 5000 ? '#FFF' : '#9E9E9E'} />
+            <MaterialIcons 
+              name="music-video" 
+              size={20} 
+              color={(user.pointstudios || 0) >= 5000 ? '#FFF' : '#9E9E9E'} 
+            />
             <Text style={[
               styles.buttonText,
-              { color: user.pointstudios >= 5000 ? '#FFF' : '#9E9E9E' }
+              { color: (user.pointstudios || 0) >= 5000 ? '#FFF' : '#9E9E9E' }
             ]}>
               Récompense Studios
             </Text>

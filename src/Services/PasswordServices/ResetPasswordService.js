@@ -1,8 +1,8 @@
-import { API_URL,PORT_USER } from '@env'
+import { API_URL } from '@env'
 
 
-// const url = "http://192.168.2.13:8002";
-const url = `${API_URL}${PORT_USER}`
+//const url = "http://192.168.2.13:8002";
+const url = API_URL
 
 
 
@@ -88,7 +88,32 @@ async function NewPassword(email, new_password) {
         return false;}
 }
 
+async function ResendEmail(email) {
+    try {
+
+        const response = await fetch(url + "/identity/resend_activation", {
+            method: "PUT",  
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+            },
+            body: JSON.stringify({ email: email }),
+        });
+        if (response) {
+            const data = await response.json();
+            console.log("Email resent successfully:", data);
+            return { success: true, data };
+        } else {
+            const errorData = await response.json();
+            console.error("Error resending email:", errorData.detail);
+            throw new Error(errorData.detail || 'Erreur lors du renvoi de l\'email');
+        }
+    }catch (error) {
+        console.error("Erreur lors du renvoi de l'email:", error
+        );
+        return false;}
+}
 
 
 
-export default {CheckEmail,CheckCode,NewPassword}
+export default {CheckEmail,CheckCode,NewPassword,ResendEmail}

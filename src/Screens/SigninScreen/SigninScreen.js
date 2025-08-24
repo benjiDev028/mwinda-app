@@ -5,6 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import styles from './Styles';
 import { useTranslation } from 'react-i18next';
 import UserService from '../../Services/UserServices/UserService';
+import { MaskedTextInput } from 'react-native-mask-text';
 
 const validateEmail = (email) => {
   const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
@@ -126,12 +127,7 @@ export default function SignIn() {
       cleanText = cleanText.substring(0, 8);
     }
     
-    // Ajouter les slashes automatiquement
-    if (cleanText.length >= 3 && cleanText.length <= 4) {
-      cleanText = cleanText.substring(0, 2) + '/' + cleanText.substring(2);
-    } else if (cleanText.length > 4) {
-      cleanText = cleanText.substring(0, 2) + '/' + cleanText.substring(2, 4) + '/' + cleanText.substring(4);
-    }
+   
     
     setDate_birth(cleanText);
   };
@@ -147,12 +143,7 @@ export default function SignIn() {
       return;
     }
 
-    // Validation de la date de naissance
-    const dateValidation = validateDate(date_birth);
-    if (!dateValidation.isValid) {
-      Alert.alert('Avertissement', dateValidation.message);
-      return;
-    }
+
 
     if (!validatePassword(Password)) {
       Alert.alert('Avertissement', 'Le mot de passe doit contenir au moins 6 caractères, une lettre, un chiffre et un caractère spécial.');
@@ -321,7 +312,8 @@ export default function SignIn() {
               />
 
               <Text style={styles.label}>{t('date_birth')}</Text>
-              <TextInput 
+              <MaskedTextInput
+                mask = "99/99/9999" 
                 style={styles.input}
                 onChangeText={handleDateChange}
                 placeholder="DD/MM/YYYY"

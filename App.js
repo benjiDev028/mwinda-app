@@ -6,37 +6,42 @@ import { AuthProvider } from './src/context/AuthContext';
 import { useEffect, useState } from 'react';
 import MainNavigator from './src/navigation/MainNavigator';
 import { NavigationContainer } from '@react-navigation/native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { createStackNavigator } from "@react-navigation/stack"; // Utiliser Stack pour une navigation indépendante
 
-
+// 👉 ajoute ça
+import { useRateApp } from './src/hooks/useReteApp';
 
 export default function App() {
-  
   const [isShowSplash, setIsShowSplash] = useState(true);
 
-  const Stack = createStackNavigator();
+  // 👉 hook pour la note
+  const { incrementLaunch, maybeAskForReview } = useRateApp();
 
+  // Compter chaque lancement d’app
   useEffect(() => {
-    setTimeout(() => {
-      setIsShowSplash(false); // Hide splash screen after 3 seconds
-    }, 3000);
-  }, []); // Empty dependency array ensures this runs once when the app starts
+    incrementLaunch();
+  }, []);
 
-  console.tron.log('Reactotron works'); // Log message for Reactotron
+  // Masquer le splash après 3s
+  useEffect(() => {
+    const t = setTimeout(() => setIsShowSplash(false), 3000);
+    return () => clearTimeout(t);
+  }, []);
+
+  // Quand le splash disparaît, tenter un prompt (respecte MIN_LAUNCHES + cooldown)
+  useEffect(() => {
+    if (!isShowSplash) {
+      // tu peux déplacer cet appel après une action “succès” si tu veux être plus fin
+      maybeAskForReview();
+    }
+  }, [isShowSplash]);
+
+  console.tron?.log?.('Reactotron works');
 
   return (
-
-    <AuthProvider>  
+    <AuthProvider>
       <NavigationContainer>
-        {isShowSplash ? (
-          <SplashScreen />
-        ) : (
-          <MainNavigator />
-       
-        )}
-      
-      </NavigationContainer>  
+        {isShowSplash ? <SplashScreen /> : <MainNavigator />}
+      </NavigationContainer>
     </AuthProvider>
   );
 }

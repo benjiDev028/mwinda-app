@@ -1,9 +1,9 @@
-import { API_URL,PORT_USER } from '@env'
+import { API_URL } from '@env'
 // AdminService.js
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// const url = "http://192.168.2.13:8002";
-const url = `${API_URL}${PORT_USER}`
+//const url = "http://192.168.2.13:8002";
+const url = API_URL
 
 
 const Register = async (firstname, lastname, email, password, date_birth) => {
@@ -52,51 +52,176 @@ const Register = async (firstname, lastname, email, password, date_birth) => {
     }
   };
   
-
-     
- const registerAdmin = async (adminData) => {
-    try {
-      // Récupérer le token depuis AsyncStorage
-      const token = await AsyncStorage.getItem('authToken');
-      
-      if (!token) {
-        throw new Error('Aucun token d\'authentification trouvé');
-      }
-
-      // Vérifier que l'utilisateur est un superadmin
-      const userRole = await AsyncStorage.getItem('userRole');
-      if (userRole !== 'superadmin') {
-        throw new Error('Seuls les superadmins peuvent créer des comptes admin');
-      }
-
-      const response = await fetch(`${url}/identity/register_admin`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(adminData),
+const add_Admin = async (firstname, lastname, email, password, date_birth) => {
+  try {
+      const response = await fetch(url + '/identity/register_admin', {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+          },
+          body: JSON.stringify({
+              "first_name": firstname,
+              "last_name": lastname,
+              "email": email,
+              "password": password,
+              "date_birth": date_birth
+          }),
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        // Si la réponse n'est pas OK, on vérifie le type d'erreur
-        if (data.error === 'EMAIL_ALREADY_REGISTERED') {
-          throw new Error('Cet email est déjà utilisé');
-        } else if (response.status === 403) {
-          throw new Error('Permission refusée - Rôle insuffisant');
-        } else {
-          throw new Error(data.message || 'Erreur lors de la création de l\'admin');
-        }
+      if (response.status !== 201) {
+        const errorData = await response.json();
+        const errorType = errorData.detail?.error;
+        const errorMessage = errorType === "EMAIL_ALREADY_REGISTERED"
+          ? "Email déjà utilisé"
+          : errorData.message || "Erreur inconnue";
+  
+        console.error("❌ Erreur d'inscription:", errorMessage);
+        return { success: false, error: errorMessage };
       }
-
-      return data;
+  
+      // ✅ Vérifier si la réponse contient du JSON (cas 201 Created)
+      let data;
+      try {
+        data = await response.json();
+      } catch (jsonError) {
+        console.warn("⚠ Réponse sans JSON, mais succès confirmé.");
+        data = {};
+      }
+  
+      console.log("✅ Utilisateur créé avec succès:", data);
+      return { success: true, data };
+  
     } catch (error) {
-      console.error('Erreur dans AdminService.registerAdmin:', error);
-      throw error;
+      console.error("❌ Erreur inattendue:", error);
+      return { success: false, error: "Une erreur inattendue s'est produite." };
     }
+  };
+
+
+const RegisterAdmin = async (firstname, lastname, email, password, date_birth) => {
+  try {
+      const response = await fetch(url + '/identity/register_admin', {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+          },
+          body: JSON.stringify({
+              "first_name": firstname,
+              "last_name": lastname,
+              "email": email,
+              "password": password,
+              "date_birth": date_birth
+          }),
+      });
+
+if (!response.ok) {
+  const errorData = await response.json();
+  const detail = errorData.detail;
+
+  let errorMessage = "Erreur inconnue côté serveur.";
+
+  if (typeof detail === 'string') {
+    // Ex: detail = "Internal Server Error"
+    errorMessage = detail;
+  } else if (detail?.error === "EMAIL_ALREADY_REGISTERED") {
+    errorMessage = detail.message || "Cet email est déjà utilisé.";
+  } else if (detail?.message) {
+    errorMessage = detail.message;
   }
+
+  console.error("❌ Erreur d'inscription:", errorMessage);
+  return { success: false, error: errorMessage };
+}
+
+  
+      // ✅ Vérifier si la réponse contient du JSON (cas 201 Created)
+      let data;
+      try {
+        data = await response.json();
+      } catch (jsonError) {
+        console.warn("⚠ Réponse sans JSON, mais succès confirmé.");
+        data = {};
+      }
+  
+      console.log("✅ Utilisateur créé avec succès:", data);
+      return { success: true, data };
+  
+    } catch (error) {
+      console.error("❌ Erreur inattendue:", error);
+      return { success: false, error: "Une erreur inattendue s'est produite." };
+    }
+  };
+  
+
+ const deleteUser = async (userId) => {
+    try {
+
+      const response = await fetch(`${url}/identity/delete_user_by_id/${userId}`, {
+        method: 'DELETE',
+
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      if (response.ok) {
+        console.log('User deleted successfully');
+        return true;
+      } else {
+        const error = await response.json();
+        console.error('Error deleting user:', error);
+        return false;
+      }
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      return false;
+    }
+  };
+
+//  const registerAdmin = async (adminData) => {
+//     try {
+//       // Récupérer le token depuis AsyncStorage
+//       const token = await AsyncStorage.getItem('authToken');
+      
+//       if (!token) {
+//         throw new Error('Aucun token d\'authentification trouvé');
+//       }
+
+//       // Vérifier que l'utilisateur est un superadmin
+//       const userRole = await AsyncStorage.getItem('userRole');
+//       if (userRole !== 'superadmin') {
+//         throw new Error('Seuls les superadmins peuvent créer des comptes admin');
+//       }
+
+//       const response = await fetch(`${url}/identity/register_admin`, {
+//         method: 'POST',
+//         headers: {
+//           'Content-Type': 'application/json',
+//           'Authorization': `Bearer ${token}`,
+//         },
+//         body: JSON.stringify(adminData),
+//       });
+
+//       const data = await response.json();
+
+//       if (!response.ok) {
+//         // Si la réponse n'est pas OK, on vérifie le type d'erreur
+//         if (data.error === 'EMAIL_ALREADY_REGISTERED') {
+//           throw new Error('Cet email est déjà utilisé');
+//         } else if (response.status === 403) {
+//           throw new Error('Permission refusée - Rôle insuffisant');
+//         } else {
+//           throw new Error(data.message || 'Erreur lors de la création de l\'admin');
+//         }
+//       }
+
+//       return data;
+//     } catch (error) {
+//       console.error('Erreur dans AdminService.registerAdmin:', error);
+//       throw error;
+//     }
+//   }
   // Fonction pour vérifier les permissions avant d'afficher l'interface
  const  checkSuperAdminPermissions = async () => {
     try {
@@ -248,5 +373,5 @@ const DeleteUserById = async(id) => {
   }
 
 
-export default {Register,updateUser,GetUsers,GetStats,GetUserById,DeleteUserById,registerAdmin,checkSuperAdminPermissions};
+export default {Register,updateUser,GetUsers,GetStats,add_Admin,GetUserById,RegisterAdmin,deleteUser,checkSuperAdminPermissions};
 

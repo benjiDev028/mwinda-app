@@ -16,14 +16,12 @@ import {
   StyleSheet,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-
 import { Snackbar, Provider as PaperProvider } from 'react-native-paper';
 import styles from './Styles';
 import splash from '../../../assets/img/splash.png';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../../context/AuthContext';
-import AdminTabs from '../../navigation/admin/AdminTabs';
 
 export default function LoginScreen() {
   const { t } = useTranslation();
@@ -63,23 +61,21 @@ export default function LoginScreen() {
   };
 
   const handleLogin = async () => {
-    if(email === '' || password === '') {
-      showSnackbar(t('Veuillez remplir tous les champs'), "warning");
+    if (email === '' || password === '') {
+      showSnackbar(t('Veuillez remplir tous les champs'), 'warning');
       return;
     }
-    
+
     setIsLoading(true);
+    console.log('🔐 Connexion en cours...');
+
     try {
       const { token, userRole } = await login(email.toLowerCase(), password);
-      if (userRole === 'admin' || 'superadmin') {
-        showSnackbar(t('login_success'), "success");
-        navigation.navigate(AdminStack,'Home');
-      } else if (userRole === 'client') {
-        showSnackbar(t('login_success'), "success");
-        navigation.navigate('ClientTabs', 'home');
-      }
+      console.log('✅ Connecté ! Rôle :', userRole);
+      showSnackbar(t('login_success'), 'success');
     } catch (error) {
-      showSnackbar(t('Mot de passe ou email incorrect'), "error");
+      console.error('❌ Erreur de login :', error);
+      showSnackbar(t('Mot de passe ou email incorrect'), 'error');
       setPassword('');
     } finally {
       setIsLoading(false);
@@ -88,30 +84,30 @@ export default function LoginScreen() {
 
   return (
     <PaperProvider>
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
-        style={styles.container}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : -500}
-      >
-        {/* Snackbar positionné en haut */}
-        <View style={customStyles.snackbarContainer}>
-          <Snackbar
-            visible={snackbarVisible}
-            onDismiss={() => setSnackbarVisible(false)}
-            duration={3000}
-            style={[
-              customStyles.snackbar,
-              snackbarType === "success" && customStyles.successSnackbar,
-              snackbarType === "error" && customStyles.errorSnackbar,
-              snackbarType === "warning" && customStyles.warningSnackbar,
-            ]}
-            wrapperStyle={customStyles.snackbarWrapper}
-          >
-            <Text style={customStyles.snackbarText}>{snackbarMessage}</Text>
-          </Snackbar>
-        </View>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.container}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 40 : 0}
+        >
+          {/* Snackbar positionné en haut */}
+          <View style={customStyles.snackbarContainer}>
+            <Snackbar
+              visible={snackbarVisible}
+              onDismiss={() => setSnackbarVisible(false)}
+              duration={3000}
+              style={[
+                customStyles.snackbar,
+                snackbarType === "success" && customStyles.successSnackbar,
+                snackbarType === "error" && customStyles.errorSnackbar,
+                snackbarType === "warning" && customStyles.warningSnackbar,
+              ]}
+              wrapperStyle={customStyles.snackbarWrapper}
+            >
+              <Text style={customStyles.snackbarText}>{snackbarMessage}</Text>
+            </Snackbar>
+          </View>
 
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <View style={styles.container}>
             <Animated.View 
               style={[
@@ -187,8 +183,8 @@ export default function LoginScreen() {
               </View>
             </Animated.View>
           </View>
-        </TouchableWithoutFeedback>
-      </KeyboardAvoidingView>
+        </KeyboardAvoidingView>
+      </TouchableWithoutFeedback>
     </PaperProvider>
   );
 }
@@ -217,7 +213,7 @@ const customStyles = StyleSheet.create({
     backgroundColor: '#F44336',
   },
   warningSnackbar: {
-    backgroundColor: '#F44336',
+    backgroundColor: '#FF9800', // Changed to orange for warning
   },
   snackbarText: {
     color: '#FFFFFF',

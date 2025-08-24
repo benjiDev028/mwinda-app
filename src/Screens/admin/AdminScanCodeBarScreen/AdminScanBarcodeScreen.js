@@ -533,7 +533,9 @@ export default function LoyaltyScannerScreen() {
                   )}
                 </View>
 
-                <View style={styles.formGroup}>
+                <View style={[
+  isReferenceModalVisible ? styles.formGroupWithDropdown : styles.formGroup
+]}>
                   <Text style={styles.label}>Référence *</Text>
                   <TouchableOpacity 
                     style={[
@@ -749,6 +751,30 @@ const styles = StyleSheet.create({
   formGroup: {
     marginBottom: 16,
     position: 'relative',
+     zIndex: 1,
+  },
+    formGroupWithDropdown: {
+    marginBottom: 16,
+    position: 'relative',
+    zIndex: 9999, // zIndex très élevé quand dropdown ouverte
+  },
+  
+  currencyDropdown: {
+    position: 'absolute',
+    top: 80,
+    left: 0,
+    right: 0,
+    backgroundColor: COLORS.light,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    zIndex: 9999, // Augmenter considérablement le zIndex
+    maxHeight: 120,
+    elevation: 10, // Pour Android
+    shadowColor: '#000', // Ombre pour iOS
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
   label: {
     fontSize: 14,

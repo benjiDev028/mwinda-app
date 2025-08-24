@@ -1,18 +1,31 @@
-import React, { useState, useEffect, useContext } from "react";
-import { View, Text, StyleSheet, Animated, ScrollView, RefreshControl } from "react-native";
+// src/Screens/client/ClientPointsScreen/ClientPointsScreen.js
+import React, { useState, useEffect, useContext, useMemo } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Animated,
+  ScrollView,
+  RefreshControl,
+  Platform,
+} from "react-native";
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import LoyaltyService from "../../../Services/LoyaltyServices/LoyaltyService";
 import { AuthContext } from '../../../context/AuthContext';
+import { useResponsive } from "../../../Utils/responsive";
 
 export default function ClientPointsScreen() {
   const { id } = useContext(AuthContext);
+  const { t } = useTranslation();
   const [studioPoints, setStudioPoints] = useState(0);
   const [eventPoints, setEventPoints] = useState(0);
   const [animatedStudio] = useState(new Animated.Value(0));
   const [animatedEvent] = useState(new Animated.Value(0));
   const [refreshing, setRefreshing] = useState(false);
-  const { t } = useTranslation();
+
+  // 🌟 Responsive goodies
+  const r = useResponsive();
 
   const fetchPoints = async () => {
     const data = await LoyaltyService.getLoyaltyPoint(id);
@@ -22,9 +35,7 @@ export default function ClientPointsScreen() {
     }
   };
 
-  useEffect(() => {
-    fetchPoints();
-  }, []);
+  useEffect(() => { fetchPoints(); }, []);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -50,19 +61,28 @@ export default function ClientPointsScreen() {
     inputRange: [0, 14000],
     outputRange: ["0%", "100%"],
   });
-
   const progressEvent = animatedEvent.interpolate({
     inputRange: [0, 50000],
     outputRange: ["0%", "100%"],
   });
 
-  const formatPoints = (points) => {
-    return points.toLocaleString('fr-FR');
-  };
+  const formatPoints = (pts) => pts.toLocaleString('fr-FR');
+
+  // 🎯 Styles dépendants du device (évite les if partout)
+  const styles = useMemo(() => makeStyles(r), [r]);
+
+  // largeur calculée pour 2 colonnes sur iPad
+  const cardWidth = useMemo(() => {
+    if (r.columns === 1) return '100%';
+    const totalGutters = r.gutter; // 1 gouttière entre 2 cartes
+    const totalPadding = r.containerPadding * 2;
+    const usable = r.width - totalPadding - totalGutters;
+    return Math.round(usable / 2);
+  }, [r]);
 
   return (
     <ScrollView
-      contentContainerStyle={styles.scrollContainer}
+      contentContainerStyle={[styles.scrollContainer, { paddingHorizontal: r.containerPadding, paddingBottom: r.space.lg }]}
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
@@ -73,25 +93,24 @@ export default function ClientPointsScreen() {
       }
     >
       <View style={styles.container}>
-        {/* Header Section */}
+        {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>{t('your points')}</Text>
-          
         </View>
 
-        {/* Points Cards */}
-        <View style={styles.cardsContainer}>
-          {/* Studio Points Card */}
-          <View style={[styles.card, styles.studioCard]}>
+        {/* Cards grid */}
+        <View style={[styles.cardsContainer, r.columns === 2 && styles.cardsRow]}>
+          {/* Studio */}
+          <View style={[styles.card, styles.studioCard, { width: cardWidth }]}>
             <View style={styles.cardHeader}>
               <View style={[styles.iconContainer, { backgroundColor: '#FFF8E1' }]}>
-                <MaterialIcons name="photo-camera" size={20} color="#FEC109" />
+                <MaterialIcons name="photo-camera" size={r.ms(18)} color="#FEC109" />
               </View>
               <Text style={styles.cardTitle}>{t('studio points')}</Text>
             </View>
-            
+
             <Text style={styles.pointsValue}>{formatPoints(studioPoints)} pts</Text>
-            
+
             <View style={styles.progressContainer}>
               <View style={styles.progressBarBackground}>
                 <Animated.View style={[styles.progressBar, { width: progressStudio }]} />
@@ -103,17 +122,17 @@ export default function ClientPointsScreen() {
             </View>
           </View>
 
-          {/* Event Points Card */}
-          <View style={[styles.card, styles.eventCard]}>
+          {/* Event */}
+          <View style={[styles.card, styles.eventCard, { width: cardWidth }]}>
             <View style={styles.cardHeader}>
               <View style={[styles.iconContainer, { backgroundColor: '#E8F5E9' }]}>
-                <MaterialIcons name="event" size={20} color="#4CAF50" />
+                <MaterialIcons name="event" size={r.ms(18)} color="#4CAF50" />
               </View>
               <Text style={styles.cardTitle}>{t('event points')}</Text>
             </View>
-            
+
             <Text style={styles.pointsValue}>{formatPoints(eventPoints)} pts</Text>
-            
+
             <View style={styles.progressContainer}>
               <View style={styles.progressBarBackground}>
                 <Animated.View style={[styles.progressBar, styles.eventProgress, { width: progressEvent }]} />
@@ -125,128 +144,59 @@ export default function ClientPointsScreen() {
             </View>
           </View>
         </View>
-
-        {/* Info Section */}
-        
       </View>
     </ScrollView>
   );
 }
 
-const styles = StyleSheet.create({
-  scrollContainer: {
-    flexGrow: 1,
+// 🧵 Styles paramétrés par le hook responsive
+const makeStyles = (r) => StyleSheet.create({
+  scrollContainer: { flexGrow: 1, backgroundColor: "#F8F8F8" },
+  container: { flex: 1, paddingTop: r.space.lg },
+  header: { marginBottom: r.space.lg, alignItems: 'center' },
+  title: { fontSize: r.font.xxl, fontWeight: '700', color: '#333' },
+
+  cardsContainer: { marginBottom: r.space.md },
+  cardsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: r.gutter, // RN >= 0.73; si plus vieux, remplace par marges
   },
-  container: {
-    flex: 1,
-    padding: 24,
-    backgroundColor: "#F8F8F8",
-  },
-  header: {
-    marginBottom: 32,
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#333',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#757575',
-    textAlign: 'center',
-    maxWidth: '80%',
-  },
-  cardsContainer: {
-    marginBottom: 24,
-  },
+
   card: {
     backgroundColor: "#FFF",
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
+    borderRadius: r.ms(16),
+    padding: r.space.md,
+    marginBottom: r.space.md,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 2,
   },
-  studioCard: {
-    borderLeftWidth: 4,
-    borderLeftColor: '#FEC109',
-  },
-  eventCard: {
-    borderLeftWidth: 4,
-    borderLeftColor: '#4CAF50',
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
+  studioCard: { borderLeftWidth: 4, borderLeftColor: '#FEC109' },
+  eventCard: { borderLeftWidth: 4, borderLeftColor: '#4CAF50' },
+
+  cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: r.space.sm },
   iconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
+    width: r.ms(36), height: r.ms(36), borderRadius: r.ms(18),
+    justifyContent: 'center', alignItems: 'center', marginRight: r.space.sm,
   },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-  },
+  cardTitle: { fontSize: r.font.lg, fontWeight: '600', color: '#333' },
   pointsValue: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#333',
-    marginBottom: 20,
-    textAlign: 'center',
+    fontSize: r.font.xl, fontWeight: '700', color: '#333',
+    marginBottom: r.space.md, textAlign: 'center',
   },
-  progressContainer: {
-    marginBottom: 8,
-  },
+
+  progressContainer: { marginBottom: r.space.xs },
   progressBarBackground: {
-    height: 8,
-    backgroundColor: "#EEEEEE",
-    borderRadius: 4,
-    overflow: "hidden",
-    marginBottom: 8,
+    height: r.ms(8), backgroundColor: "#EEEEEE",
+    borderRadius: r.ms(4), overflow: "hidden", marginBottom: r.space.xs,
   },
-  progressBar: {
-    height: "100%",
-    backgroundColor: "#FEC109",
-    borderRadius: 4,
-  },
-  eventProgress: {
-    backgroundColor: "#4CAF50",
-  },
-  progressLabels: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  progressLabel: {
-    fontSize: 12,
-    color: '#9E9E9E',
-  },
-  infoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    padding: 16,
-    borderRadius: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  infoText: {
-    fontSize: 13,
-    color: '#616161',
-    marginLeft: 12,
-    flex: 1,
-  },
+  progressBar: { height: "100%", backgroundColor: "#FEC109", borderRadius: r.ms(4) },
+  eventProgress: { backgroundColor: "#4CAF50" },
+
+  progressLabels: { flexDirection: 'row', justifyContent: 'space-between' },
+  progressLabel: { fontSize: r.font.sm, color: '#9E9E9E' },
 });

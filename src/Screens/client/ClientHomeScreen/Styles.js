@@ -1,6 +1,9 @@
-import { StyleSheet } from "react-native";
+import { StyleSheet, Dimensions } from "react-native";
 
-const COLORS = {
+const { width } = Dimensions.get('window');
+const isTablet = width > 600;
+
+export const COLORS = {
   primary: '#FEC109',
   dark: '#121212',
   light: '#FFFFFF',
@@ -10,42 +13,44 @@ const COLORS = {
   cardBorder: '#E9ECEF',
   secondary: '#6C757D',
   accentBlue: '#0D6EFD',
-  accentGreen: '#198754'
+  accentGreen: '#198754',
+  accentRed: '#DC3545',
+  accentPurple: '#6F42C1'
 };
+
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
   },
   scrollContainer: {
-    paddingBottom: 30,
+    paddingBottom: isTablet ? 40 : 30,
   },
   header: {
-    paddingHorizontal: 25,
-    paddingTop: 40,
-    paddingBottom: 30,
+    paddingHorizontal: isTablet ? 40 : 25,
+    paddingTop: isTablet ? 50 : 40,
+    paddingBottom: isTablet ? 35 : 30,
     alignItems: 'center',
     backgroundColor: COLORS.light,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
     marginBottom: 20,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
   },
   logoBadge: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: isTablet ? 60 : 50,
+    height: isTablet ? 60 : 50,
+    borderRadius: isTablet ? 30 : 25,
     backgroundColor: COLORS.dark,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 15,
   },
   slogan: {
-    fontSize: 22,
+    fontSize: isTablet ? 26 : 22,
     fontWeight: '700',
     color: COLORS.dark,
     textAlign: 'center',
@@ -53,18 +58,18 @@ export const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   subSlogan: {
-    fontSize: 14,
+    fontSize: isTablet ? 16 : 14,
     color: COLORS.secondary,
     textAlign: 'center',
-    maxWidth: '80%',
-    lineHeight: 20,
+    maxWidth: isTablet ? '70%' : '80%',
+    lineHeight: isTablet ? 24 : 20,
   },
   servicesContainer: {
-    paddingHorizontal: 20,
+    paddingHorizontal: isTablet ? 30 : 20,
     marginBottom: 20,
   },
   sectionTitle: {
-    fontSize: 13,
+    fontSize: isTablet ? 15 : 13,
     fontWeight: '600',
     color: COLORS.secondary,
     letterSpacing: 1.5,
@@ -75,40 +80,41 @@ export const styles = StyleSheet.create({
   servicesGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    justifyContent: isTablet ? 'flex-start' : 'space-between',
+    gap: isTablet ? '3%' : 0,
   },
   serviceCard: {
-    width: '48%',
+    width: isTablet ? '30%' : '48%',
     backgroundColor: COLORS.light,
-    borderRadius: 10,
-    padding: 18,
-    marginBottom: 15,
+    borderRadius: 12,
+    padding: isTablet ? 24 : 18,
+    marginBottom: isTablet ? 20 : 15,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: COLORS.cardBorder,
-    borderTopWidth: 0,
+    borderTopWidth: 3,
   },
   serviceIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: isTablet ? 48 : 40,
+    height: isTablet ? 48 : 40,
+    borderRadius: isTablet ? 24 : 20,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 15,
   },
   serviceName: {
-    fontSize: 16,
+    fontSize: isTablet ? 18 : 16,
     fontWeight: '600',
     color: COLORS.dark,
     marginBottom: 8,
     textAlign: 'center',
   },
   serviceDescription: {
-    fontSize: 12,
+    fontSize: isTablet ? 14 : 12,
     color: COLORS.lightText,
     textAlign: 'center',
     marginBottom: 15,
-    lineHeight: 18,
+    lineHeight: isTablet ? 21 : 18,
   },
   separator: {
     height: 1,
@@ -121,12 +127,9 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
   },
   ctaText: {
-    fontSize: 12,
-    color: COLORS.primary,
-   
+    fontSize: isTablet ? 14 : 12,
     fontWeight: '600',
     marginRight: 5,
-    
   },
   loyaltyCard: {
     flexDirection: 'row',
@@ -134,8 +137,8 @@ export const styles = StyleSheet.create({
     justifyContent: 'space-between',
     backgroundColor: COLORS.light,
     borderRadius: 12,
-    padding: 18,
-    marginHorizontal: 20,
+    padding: isTablet ? 24 : 18,
+    marginHorizontal: isTablet ? 30 : 20,
     borderWidth: 1,
     borderColor: COLORS.cardBorder,
   },
@@ -144,23 +147,23 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loyaltyIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: isTablet ? 44 : 36,
+    height: isTablet ? 44 : 36,
+    borderRadius: isTablet ? 22 : 18,
     backgroundColor: '#FFF9C4',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
   loyaltyTitle: {
-    fontSize: 12,
+    fontSize: isTablet ? 14 : 12,
     fontWeight: '600',
     color: COLORS.secondary,
     letterSpacing: 1,
     marginBottom: 2,
   },
   loyaltyPoints: {
-    fontSize: 18,
+    fontSize: isTablet ? 22 : 18,
     fontWeight: '700',
     color: COLORS.dark,
   },

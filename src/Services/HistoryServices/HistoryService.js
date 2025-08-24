@@ -1,7 +1,7 @@
 import UserService from "../UserServices/UserService";
-import { API_URL, PORT_HISTORY } from '@env';
+import { API_URL } from '@env';
 
-const url = `${API_URL}${PORT_HISTORY}`;
+const url = API_URL
 
 const isValidUUID = (uuid) => {
   if (!uuid || uuid === 'undefined' || uuid === 'null' || typeof uuid !== 'string') {

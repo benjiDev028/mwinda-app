@@ -1,7 +1,7 @@
-import { API_URL,PORT_LOYALTY } from '@env'
+import { API_URL } from '@env'
 
 
-const url = `${API_URL}${PORT_LOYALTY}`
+const url = API_URL
 
 
 

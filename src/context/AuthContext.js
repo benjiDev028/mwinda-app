@@ -8,87 +8,98 @@ export const AuthProvider = ({ children }) => {
   const [userRole, setUserRole] = useState(null);
   const [authToken, setAuthToken] = useState(null);
   const [barcodeBase64, setBarcodeBase64] = useState(null);
-  const[accessToken,setAccessToken]=useState(null)
-  const [id, setId] = useState(null);
   const [userEmail, setUserEmail] = useState(null);
+  const [id, setId] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const checkSession = async () => {
       try {
-        // Récupérer les données depuis AsyncStorage
         const storedToken = await AsyncStorage.getItem('authToken');
         const storedRole = await AsyncStorage.getItem('userRole');
         const storedBarcode = await AsyncStorage.getItem('barcodeBase64');
-        const accessToken = await AsyncStorage.getItem('access_token')
         const storedId = await AsyncStorage.getItem('id');
+        const userEmail = await AsyncStorage.getItem('user_email');
 
-  
-        // Si le token existe, restaurer la session
         if (storedToken) {
           setAuthToken(storedToken);
           setUserRole(storedRole);
           setBarcodeBase64(storedBarcode);
           setId(storedId);
+          setUserEmail(userEmail);
         }
       } catch (error) {
-        console.error('Erreur lors de la récupération du token ou du rôle:', error);
+        console.error('Erreur de récupération session :', error);
+      } finally {
+        setIsLoading(false);
       }
     };
-  
     checkSession();
-  }, []); // Exécuter au démarrage de l'application
-  
+  }, []);
 
   const login = async (email, password) => {
-    const response = await AuthService.Login(email, password);
-    
-  
-    if (response && response.access_token) {
-      const token = response.access_token;
-      const decodedToken = AuthService.decodeJWT(token);
-      const userRole = decodedToken.role;
-      const barcodeBase64 = response.barcode_base64;
-      const id = decodedToken.user_id;
-      const user_email = decodedToken.sub;
-  
-      // Stocker les données utilisateur dans AsyncStorage
-      await AsyncStorage.setItem('authToken', token);
-      await AsyncStorage.setItem('userRole', userRole);
-      await AsyncStorage.setItem('barcodeBase64', barcodeBase64);
-      await AsyncStorage.setItem('id', id);
-      await AsyncStorage.setItem('user_email', user_email);
-  
-      // Mettre à jour l'état global
-      setAuthToken(token);
-      setUserRole(userRole);
-      setBarcodeBase64(barcodeBase64);
-      setId(id);
-      setUserEmail(user_email);
+    try {
+      const response = await AuthService.Login(email, password);
+      
+      if (response && response.access_token) {
+        const token = response.access_token;
+        const decoded = AuthService.decodeJWT(token);
+        
+        // ✅ Extraction sécurisée des données avec vérifications
+        const userRole = decoded.role || 'client'; // valeur par défaut
+        const barcodeBase64 = response.barcode_base64 || '';
+        const id = decoded.user_id || decoded['user/id'] || ''; // gérer les deux formats
+        const user_email = decoded.sub || email;
 
-  
-      return { token, userRole, barcodeBase64 };
-    } else {
-      throw new Error('Échec de la connexion');
+        // ✅ Vérification avant stockage - ne stocker que des valeurs définies
+        const dataToStore = {
+          authToken: token,
+          userRole: userRole,
+          barcodeBase64: barcodeBase64,
+          id: id,
+          user_email: user_email
+        };
+
+        // Stocker seulement les valeurs non-vides
+        for (const [key, value] of Object.entries(dataToStore)) {
+          if (value !== undefined && value !== null && value !== '') {
+            await AsyncStorage.setItem(key, value);
+          } else {
+            console.warn(`⚠️ Valeur vide pour ${key}:`, value);
+          }
+        }
+
+        // Mettre à jour l'état
+        setAuthToken(token);
+        setUserRole(userRole);
+        setBarcodeBase64(barcodeBase64);
+        setId(id);
+        setUserEmail(user_email);
+
+        console.log('✅ Connexion réussie avec ID:', id);
+        return { token, userRole };
+      } else {
+        throw new Error('Échec de la connexion: token manquant');
+      }
+    } catch (error) {
+      console.error('❌ Erreur de login :', error);
+      throw error;
     }
   };
-  
 
   const logout = async () => {
-    // Supprimer les données utilisateur
-    await AsyncStorage.removeItem('authToken');
-    await AsyncStorage.removeItem('userRole');
-    await AsyncStorage.removeItem('barcodeBase64');
-    await AsyncStorage.removeItem('id');
-    await AsyncStorage.removeItem('user_email');  
-  
-    // Réinitialiser l'état global
-    setAuthToken(null);
-    setUserRole(null);
-    setBarcodeBase64(null);
-    setId(null);
-    setUserEmail(null);
+    try {
+      await AsyncStorage.clear();
+      setAuthToken(null);
+      setUserRole(null);
+      setBarcodeBase64(null);
+      setId(null);
+      setUserEmail(null);
+      console.log('✅ Déconnexion réussie');
+    } catch (error) {
+      console.error('❌ Erreur de déconnexion:', error);
+    }
   };
-  
 
   return (
     <AuthContext.Provider
@@ -97,8 +108,10 @@ export const AuthProvider = ({ children }) => {
         authToken,
         barcodeBase64,
         id,
+        userEmail, // ✅ Ajout de userEmail dans le contexte
         login,
         logout,
+        isLoading,
       }}
     >
       {children}
