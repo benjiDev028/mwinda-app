@@ -40,8 +40,8 @@ const validatePassword = (pwd) =>
 
 const parseBirthDate = (input) => {
   // attend "JJ/MM/AAAA" -> renvoie "AAAA-MM-DD"
-  //const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(input.trim());
-  const m = /^(\d{2})-(\d{2})-(\d{4})$/.exec(input.trim());
+  const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(input.trim());
+  //const m = /^(\d{2})-(\d{2})-(\d{4})$/.exec(input.trim());
   if (!m) return { ok: false, msg: "Format attendu: JJ-MM-AAAA." };
   const [_, jj, mm, aaaa] = m;
   const iso = `${aaaa}-${mm}-${jj}`;

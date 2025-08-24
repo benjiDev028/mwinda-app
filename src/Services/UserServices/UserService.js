@@ -373,5 +373,5 @@ const DeleteUserById = async(id) => {
   }
 
 
-export default {Register,updateUser,GetUsers,GetStats,add_Admin,GetUserById,RegisterAdmin,deleteUser,checkSuperAdminPermissions};
+export default {Register,updateUser,GetUsers,GetStats,add_Admin,GetUserById,DeleteUserById,RegisterAdmin,deleteUser,checkSuperAdminPermissions};
 

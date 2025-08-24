@@ -444,7 +444,7 @@ export default function AdminViewClientsScreen() {
         setTimeout(() => reject(new Error('Timeout lors de la suppression')), 10000)
       );
 
-      const deletePromise = UserService.deleteUser(userToDelete, authToken);
+      const deletePromise = UserService.deleteUser(userToDelete);
       await Promise.race([deletePromise, timeoutPromise]);
       
       await fetchUsers(true);

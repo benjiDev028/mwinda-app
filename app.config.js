@@ -4,7 +4,7 @@ export default {
   expo: {
     name: "Mwinda",
     slug: "Mwinda",
-    version: "1.1.9",           // ← runtimeVersion = appVersion ⇒ updates compatibles tant que cette version ne change pas
+    version: "1.1.9",
     owner: "benjidev028",
     orientation: "portrait",
     icon: "./assets/img/iconf.jpg",
@@ -21,15 +21,15 @@ export default {
     updates: {
       url: "https://u.expo.dev/15ade672-1b0e-4fce-b3e9-2652f5d3f486"
     },
+    runtimeVersion: { policy: "appVersion" },   // ← MANQUAIT
 
-    // élargis si tu veux tout packager ; sinon garde ton pattern
-    assetBundlePatterns: ["assets/img/*"], // ou ["**/*"]
+    assetBundlePatterns: ["assets/img/*"],
 
     ios: {
       supportsTablet: false,
       bundleIdentifier: "com.coretech.mwinda",
       jsEngine: "jsc",
-      buildNumber: "16",         // ← ici, pas au root
+      buildNumber: "16",
       infoPlist: {
         NSMicrophoneUsageDescription: "This app requires microphone access",
         NSCameraUsageDescription: "This app requires camera access",
@@ -49,7 +49,7 @@ export default {
 
     android: {
       package: "com.coretech.mwinda",
-      versionCode: 16,           // ← bump à 16 pour matcher iOS
+      versionCode: 16,
       jsEngine: "jsc",
       adaptiveIcon: {
         foregroundImage: "./assets/img/adaptive-icon.png",
