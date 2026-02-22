@@ -1,5 +1,5 @@
 ## Ticket
-- [ ] Ticket: MOVA-XXX
+- [ ] Ticket: TCF-XXX
 - [ ] Closes #<github_issue_number>
 
 ## Goal
@@ -13,8 +13,8 @@ Explain the purpose of this PR.
 2. Expected result
 
 ## Checklist
-- [ ] Branch name is `MOVA/MOVA-XXX`
-- [ ] Commits are like `[MOVA-XXX] message`
+- [ ] Branch name is `TCF/MOVA-XXX`
+- [ ] Commits are like `[TCF-XXX] message`
 - [ ] No direct push to master/release
 
 ## dependencies
