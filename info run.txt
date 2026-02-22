@@ -1,0 +1,14 @@
+how start servers
+
+
+1. MICRO SERVICE HISTORIQUE
+=> uvicorn app.main:app --host 192.168.2.13 --port 8004
+
+2. MICRO SERVICE User
+=> uvicorn app.main:app --host 192.168.2.13 --port 8002
+
+3. MICRO SERVICE LOYALTY
+=> uvicorn app.main:app --host 192.168.2.13 --port 8003
+
+4. MICRO SERVICE NOTIFICATION
+=> python -m app.main

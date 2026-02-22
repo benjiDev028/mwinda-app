@@ -1,0 +1,83 @@
+
+
+services:
+  # PostgreSQL for User Service
+  postgres_user:
+    image: postgres:16-alpine
+    container_name: mwinda_postgres_user
+    environment:
+      POSTGRES_USER: mwinda
+      POSTGRES_PASSWORD: mwinda
+      POSTGRES_DB: mwinda_user
+    volumes:
+      - pg_user_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mwinda -d mwinda_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - mwinda_network
+
+  # RabbitMQ Message Broker
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: mwinda_rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      mwinda_network:
+        aliases:
+          - rabbitmq
+
+  # User Service API
+  user_api:
+    image: ghcr.io/benjidev028/mwinda-user:latest
+    container_name: mwinda_user_api
+    env_file:
+      - .env.user
+    environment:
+      # Override reload for production
+      UVICORN_RELOAD: "0"
+      RUN_MIGRATIONS: "1"
+      DB_WAIT_SECONDS: "60"
+      RABBIT_WAIT_SECONDS: "60"
+    entrypoint: ["/app/entrypoint.sh"]
+    ports:
+      - "8003:8003"
+    depends_on:
+      postgres_user:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    networks:
+      - mwinda_network
+
+
+volumes:
+  pg_user_data:
+    driver: local
+ 
+networks:
+  mwinda_network:
+    driver: bridge

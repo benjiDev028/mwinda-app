@@ -1,0 +1,59 @@
+{
+    "erreur": "Error",
+    "avertissement": "Warning",
+
+    "login": "Log In",
+    "signin": "Sign Up",
+    "forgot password": "Forgot Password",
+
+    "firstname": "First Name",
+    "lastname": "Last Name",
+    "email": "Email",
+    "date_birth": "Date of Birth",
+    "password": "Password", 
+    "create account button": "Create Account",
+    "already have an account": "Already have an account?",
+    "connexion": "Login",
+
+    "r mdp": "Password Reset",
+    "entrer": "Enter your email address to receive the verification code",
+    "send code btn": "Send Code",
+    
+
+    "verification": "Security Verification",
+    "enter the code": "Enter the code received by email",
+    "verify code btn": "Verify Code",
+
+    "new password": "New Password",
+    "enter new mdp": "Please enter your new password",
+    "valide btn": "Validate",
+
+    "your points": "Your Points",
+    "studio points": "Studio Points",
+    "event points": "Event Points",
+
+
+
+    "history": "Transaction History",
+    "amount": "Amount",
+    "your barcode": "Your Barcode",
+    "reload": "Reload",
+    "no barcode": "No barcode available",
+    "no history": "No transactions found",
+    "error history": "Error loading history",
+    
+    
+
+    
+
+    "activities": "Activities",
+    "logout": "Log Out",
+    "scan": "Scan",
+    "home": "Home",
+    "customers": "Customers",
+    "profile": "Profile"
+
+
+
+
+}

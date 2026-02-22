@@ -1,0 +1,63 @@
+services:
+  postgres_user:
+    image: postgres:16-alpine
+    container_name: mwinda_postgres_user
+    environment:
+      POSTGRES_USER: mwinda
+      POSTGRES_PASSWORD: mwinda_password
+      POSTGRES_DB: mwinda_user
+    volumes:
+      - pg_user_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mwinda -d mwinda_user"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+    networks:
+      - mwinda_network
+
+
+
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: mwinda_rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    restart: unless-stopped
+    networks:
+      mwinda_network:
+        aliases:
+          - rabbitmq
+
+  mwinda_user:
+    build:
+      context: ./mwinda-user
+      dockerfile: dockerfile
+    container_name: mwinda_user_api
+    env_file:
+      - ${USER_ENV_FILE:-.env.user.ci.example}
+    environment:
+      UVICORN_RELOAD: "1"
+    ports:
+      - "8003:8003"
+    volumes:
+      - ./mwinda-user:/app
+    depends_on:
+      postgres_user:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - mwinda_network
+
+
+volumes:
+  pg_user_data:
+
+networks:
+  mwinda_network:
+    driver: bridge

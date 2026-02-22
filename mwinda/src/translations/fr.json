@@ -1,0 +1,59 @@
+{
+
+    "erreur": "Erreur",
+    "avertissement": "Avertissement",
+
+    "login": "Se connecter",
+    "signin": "S'enregistrer",
+    "forgot password": "Mot de passe oublié",
+
+    "firstname": "Prénom",
+    "lastname": "Nom",
+    "email": "Email",
+    "date_birth": "Date de naissance",
+    "create account button": "Créer un compte",
+    
+    "already have an account": "Vous avez déjà un compte ?",
+    "connexion": "Connexion",
+
+    "r mdp": "Réinitialisation de mot de passe",
+    "entrer": "Entrez votre adresse email pour recevoir le code de vérification",
+    "send code btn": "Envoyer le code",
+
+    "verification": "Vérification de sécurité",
+    "enter the code": "Entrez le code reçu par e-mail",
+    "verify code btn": "Vérifier le Code",
+
+    "new password": "Nouveau mot de passe",
+    "enter new mdp": "Veuillez entrer votre nouveau mot de passe",
+    "valide btn": "Valider",
+
+    "your points": "Vos points",
+    "studio points": "Studio Points",
+    "event points": "Points d'événement",
+
+
+    "history": "Historique des transactions",
+    "amount" : "Montant",
+    "your barcode":"Votre Code-barres",
+    "reload":"Recharge",
+    "no barcode" : "Aucun code-barres disponible",
+    "no history":"Aucune transaction trouvée",
+    "error history":"Erreur lors du chargement de l'historique",
+    
+
+
+
+
+    "password": "Mot de passe",    
+    "activities": "Activités",
+    "logout": "Se déconnecter",
+    "scan": "Scanner",
+    "home": "Accueil",
+    "customers": "Clients",
+    "profile": "Profil"
+   
+
+
+
+}
